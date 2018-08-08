@@ -1,0 +1,6 @@
+Dependencies for Project 'Lab4', Target 'Target 1': (DO NOT MODIFY !)
+F (.\main.s)(0x59B77FF4)(--cpu Cortex-M4.fp --pd "__EVAL SETA 1" -g --apcs=interwork -I C:\Keil\ARM\RV31\INC-I C:\Keil\ARM\CMSIS\Include-I C:\Keil\ARM\Inc\TI\TM4C123--list .\main.lst --xref -o .\main.o --depend .\main.d)
+F (.\MCU_Clock.s)(0x5944E27C)(--cpu Cortex-M4.fp --pd "__EVAL SETA 1" -g --apcs=interwork -I C:\Keil\ARM\RV31\INC-I C:\Keil\ARM\CMSIS\Include-I C:\Keil\ARM\Inc\TI\TM4C123--list .\mcu_clock.lst --xref -o .\mcu_clock.o --depend .\mcu_clock.d)
+F (.\Startup.s)(0x5941818B)(--cpu Cortex-M4.fp --pd "__EVAL SETA 1" -g --apcs=interwork -I C:\Keil\ARM\RV31\INC-I C:\Keil\ARM\CMSIS\Include-I C:\Keil\ARM\Inc\TI\TM4C123--list .\startup.lst --xref -o .\startup.o --depend .\startup.d)
+F (.\SysTick.s)(0x59B77BC0)(--cpu Cortex-M4.fp --pd "__EVAL SETA 1" -g --apcs=interwork -I C:\Keil\ARM\RV31\INC-I C:\Keil\ARM\CMSIS\Include-I C:\Keil\ARM\Inc\TI\TM4C123--list .\systick.lst --xref -o .\systick.o --depend .\systick.d)
+F (.\tm4c123gh6pm.s)(0x5942303C)(--cpu Cortex-M4.fp --pd "__EVAL SETA 1" -g --apcs=interwork -I C:\Keil\ARM\RV31\INC-I C:\Keil\ARM\CMSIS\Include-I C:\Keil\ARM\Inc\TI\TM4C123--list .\tm4c123gh6pm.lst --xref -o .\tm4c123gh6pm.o --depend .\tm4c123gh6pm.d)

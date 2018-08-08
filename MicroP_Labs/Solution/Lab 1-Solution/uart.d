@@ -1,0 +1,10 @@
+.\uart.o: C:\Keil\EE319Kware\driverlib\uart.c
+.\uart.o: C:\Keil\EE319Kware\inc/hw_ints.h
+.\uart.o: C:\Keil\EE319Kware\inc/hw_memmap.h
+.\uart.o: C:\Keil\EE319Kware\inc/hw_sysctl.h
+.\uart.o: C:\Keil\EE319Kware\inc/hw_types.h
+.\uart.o: C:\Keil\EE319Kware\inc/hw_uart.h
+.\uart.o: C:\Keil\EE319Kware\driverlib/debug.h
+.\uart.o: C:\Keil\EE319Kware\driverlib/interrupt.h
+.\uart.o: C:\Keil\EE319Kware\driverlib/uart.h
+.\uart.o: C:\Keil\EE319Kware\driverlib/sysctl.h

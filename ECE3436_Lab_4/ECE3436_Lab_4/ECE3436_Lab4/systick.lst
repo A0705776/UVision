@@ -1,0 +1,198 @@
+
+
+
+ARM Macro Assembler    Page 1 
+
+
+    1 00000000         ;SysTick INIT (refer to Pg174 of the textbook)
+    2 00000000         ;this file contains 2 functions, SysTick_INIT and Delay_
+                       10us and Delay_1250ns
+    3 00000000         ;-------------------------------------------------------
+                       --------- Definition -----------------------------------
+                       ----------------------------
+    4 00000000         ; NVIC REGISTERS
+    5 00000000 E000E010 
+                       NVIC_ST_CTRL_R
+                               EQU              0xE000E010
+    6 00000000 E000E014 
+                       NVIC_ST_RELOAD_R
+                               EQU              0xE000E014
+    7 00000000 E000E018 
+                       NVIC_ST_CURRENT_R
+                               EQU              0xE000E018
+    8 00000000 00000320 
+                       Time_10us
+                               EQU              800
+    9 00000000 000186A0 
+                       Time_1250ns
+                               EQU              100000
+   10 00000000         ;-------------------------------------------------------
+                       ----- End of Definition --------------------------------
+                       ---------------------------
+   11 00000000         
+   12 00000000                 AREA             |.text|, CODE, READONLY, ALIGN 
+= 2
+   13 00000000                 THUMB
+   14 00000000                 EXPORT           SysTick_Init
+   15 00000000                 EXPORT           Delay_10us
+   16 00000000                 EXPORT           Delay_1250ns
+   17 00000000         ;-------------------------------------------------------
+                       -------- SysTick_INIT ----------------------------------
+                       ---------------------------
+   18 00000000         SysTick_Init
+   19 00000000         ;Write your code here
+   20 00000000 4770            BX               LR          ;Return
+   21 00000002         ;-------------------------------------------------------
+                       ---- End of SysTick_INIT -------------------------------
+                       ---------------------------
+   22 00000002         
+   23 00000002         ;-------------------------------------------------------
+                       ----------- Delay --------------------------------------
+                       ---------------------------
+   24 00000002         ; Time delay using busy wait. 
+   25 00000002         ; Input: R0  delay parameter in units of the core clock 
+                       (12.5 nsec) 
+   26 00000002         ; Output: none     ; Modifies: R0, R1, R3
+   27 00000002         Delay
+   28 00000002         ;Write your code here
+   29 00000002 4770            BX               LR          ;Return
+   30 00000004         ;-------------------------------------------------------
+                       -------- End of Delay ----------------------------------
+                       ---------------------------
+   31 00000004         
+   32 00000004         ;-------------------------------------------------------
+                       ---------- Delay_10us ----------------------------------
+                       ----------------------------
+
+
+
+ARM Macro Assembler    Page 2 
+
+
+   33 00000004         ; 10us delay using Delay function 
+   34 00000004         ; Input: R0  delay parameter in units of the 10us delay 
+                        
+   35 00000004         ; Output: none     ; Modifies: R0, R1 
+   36 00000004         Delay_10us
+   37 00000004         ;Write your code here
+   38 00000004 4770            BX               LR          ;Return
+   39 00000006         ;-------------------------------------------------------
+                       ------ End of Delay_10us -------------------------------
+                       ----------------------------
+   40 00000006         
+   41 00000006         ;-------------------------------------------------------
+                       -------- Delay_1250ns ----------------------------------
+                       ---------------------------
+   42 00000006         ; 1250ns delay using Delay function 
+   43 00000006         ; Input: R0  delay parameter in units of the 12.5ms dela
+                       y  
+   44 00000006         ; Output: none     ; Modifies: R0, R1 
+   45 00000006         Delay_1250ns
+   46 00000006         ;Write your code here
+   47 00000006 4770            BX               LR          ;Return
+   48 00000008         ;-------------------------------------------------------
+                       ----- End of Delay_1250ns ------------------------------
+                       ---------------------------
+   49 00000008         
+   50 00000008         
+   51 00000008                 ALIGN
+   52 00000008                 END
+Command Line: --debug --xref --cpu=Cortex-M4.fp --apcs=interwork --depend=.\sys
+tick.d -o.\systick.o -IC:\Keil\ARM\RV31\INC -IC:\Keil\ARM\CMSIS\Include -IC:\Ke
+il\ARM\Inc\TI\TM4C123 --predefine="__EVAL SETA 1" --list=.\systick.lst SysTick.
+s
+
+
+
+ARM Macro Assembler    Page 1 Alphabetic symbol ordering
+Relocatable symbols
+
+.text 00000000
+
+Symbol: .text
+   Definitions
+      At line 12 in file SysTick.s
+   Uses
+      None
+Comment: .text unused
+Delay 00000002
+
+Symbol: Delay
+   Definitions
+      At line 27 in file SysTick.s
+   Uses
+      None
+Comment: Delay unused
+Delay_10us 00000004
+
+Symbol: Delay_10us
+   Definitions
+      At line 36 in file SysTick.s
+   Uses
+      At line 15 in file SysTick.s
+Comment: Delay_10us used once
+Delay_1250ns 00000006
+
+Symbol: Delay_1250ns
+   Definitions
+      At line 45 in file SysTick.s
+   Uses
+      At line 16 in file SysTick.s
+Comment: Delay_1250ns used once
+SysTick_Init 00000000
+
+Symbol: SysTick_Init
+   Definitions
+      At line 18 in file SysTick.s
+   Uses
+      At line 14 in file SysTick.s
+Comment: SysTick_Init used once
+5 symbols
+
+
+
+ARM Macro Assembler    Page 1 Alphabetic symbol ordering
+Absolute symbols
+
+NVIC_ST_CTRL_R E000E010
+
+Symbol: NVIC_ST_CTRL_R
+   Definitions
+      At line 5 in file SysTick.s
+   Uses
+      None
+Comment: NVIC_ST_CTRL_R unused
+NVIC_ST_CURRENT_R E000E018
+
+Symbol: NVIC_ST_CURRENT_R
+   Definitions
+      At line 7 in file SysTick.s
+   Uses
+      None
+Comment: NVIC_ST_CURRENT_R unused
+NVIC_ST_RELOAD_R E000E014
+
+Symbol: NVIC_ST_RELOAD_R
+   Definitions
+      At line 6 in file SysTick.s
+   Uses
+      None
+Comment: NVIC_ST_RELOAD_R unused
+Time_10us 00000320
+
+Symbol: Time_10us
+   Definitions
+      At line 8 in file SysTick.s
+   Uses
+      None
+Comment: Time_10us unused
+Time_1250ns 000186A0
+
+Symbol: Time_1250ns
+   Definitions
+      At line 9 in file SysTick.s
+   Uses
+      None
+Comment: Time_1250ns unused
+5 symbols
+342 symbols in table

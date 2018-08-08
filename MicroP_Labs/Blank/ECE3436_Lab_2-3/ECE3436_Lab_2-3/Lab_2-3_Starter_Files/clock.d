@@ -1,0 +1,1 @@
+.\clock.o: Clock.s

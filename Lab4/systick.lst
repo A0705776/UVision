@@ -1,0 +1,357 @@
+
+
+
+ARM Macro Assembler    Page 1 
+
+
+    1 00000000         ;SysTick INIT (refer to Pg174 of the textbook)
+    2 00000000         ;this file contains 2 functions, SysTick_INIT and Delay_
+                       10us and Delay_1250ns
+    3 00000000         ;-------------------------------------------------------
+                       --------- Definition -----------------------------------
+                       ----------------------------
+    4 00000000         ; NVIC REGISTERS
+    5 00000000 E000E010 
+                       NVIC_ST_CTRL_R
+                               EQU              0xE000E010
+    6 00000000 E000E014 
+                       NVIC_ST_RELOAD_R
+                               EQU              0xE000E014
+    7 00000000 E000E018 
+                       NVIC_ST_CURRENT_R
+                               EQU              0xE000E018
+    8 00000000 00000320 
+                       Time_10us
+                               EQU              800
+    9 00000000 000186A0 
+                       Time_1250ns
+                               EQU              100000
+   10 00000000         ;-------------------------------------------------------
+                       ----- End of Definition --------------------------------
+                       ---------------------------
+   11 00000000         
+   12 00000000                 AREA             |.text|, CODE, READONLY, ALIGN 
+= 2
+   13 00000000                 THUMB
+   14 00000000                 EXPORT           SysTick_Init
+   15 00000000                 EXPORT           Delay_10us
+   16 00000000                 EXPORT           Delay_1250ns
+   17 00000000         ;-------------------------------------------------------
+                       -------- SysTick_INIT ----------------------------------
+                       ---------------------------
+   18 00000000         SysTick_Init
+   19 00000000         ;Disable SysTick
+   20 00000000 4917            LDR              R1, =NVIC_ST_CTRL_R ;R1 = &NVIC
+                                                            _ST_CTRL_R
+   21 00000002 F04F 0000       MOV              R0, #0      ;Disable SysTick du
+                                                            ring setup by clear
+                                                             it 
+   22 00000006 6008            STR              R0, [R1]    ;Store Value of R0 
+                                                            into the address of
+                                                             R1
+   23 00000008         ;Setting Reload value 
+   24 00000008 4916            LDR              R1, =NVIC_ST_RELOAD_R ;R1 = &NV
+                                                            IC_ST_RELOAD_R
+   25 0000000A 4817            LDR              R0, =0x00FFFFFF 
+                                                            ;Max reload value
+   26 0000000C 6008            STR              R0, [R1]    ;Store Value of R0 
+                                                            into the address of
+                                                             R1
+   27 0000000E         ;Clears counter 
+   28 0000000E 4917            LDR              R1, =NVIC_ST_CURRENT_R ;R1 = &N
+                                                            VIC_ST_CURRENT_R
+   29 00000010 F04F 0000       MOV              R0, #0      ;Any write to curre
+                                                            nt clears it
+   30 00000014 6008            STR              R0, [R1]    ;Store Value of R0 
+
+
+
+ARM Macro Assembler    Page 2 
+
+
+                                                            into the address of
+                                                             R1
+   31 00000016         ;Enable SysTick
+   32 00000016 4912            LDR              R1, =NVIC_ST_CTRL_R ;R1 = &NVIC
+                                                            _ST_CTRL_R
+   33 00000018 F04F 0005       MOV              R0, #0x05   ;Enable SysTick by 
+                                                            setting bit 2 and 1
+                                                             with core clock
+   34 0000001C 6008            STR              R0, [R1]    ;Store Value of R0 
+                                                            into the address of
+                                                             R1
+   35 0000001E         ;End
+   36 0000001E 4770            BX               LR          ;Return
+   37 00000020         ;-------------------------------------------------------
+                       ---- End of SysTick_INIT -------------------------------
+                       ---------------------------
+   38 00000020         
+   39 00000020         ;-------------------------------------------------------
+                       ----------- Delay --------------------------------------
+                       ---------------------------
+   40 00000020         ; Time delay using busy wait. 
+   41 00000020         ; Input: R0  delay parameter in units of the core clock 
+                       (12.5 nsec) 
+   42 00000020         ; Output: none     ; Modifies: R0, R1, R3
+   43 00000020         Delay
+   44 00000020 4910            LDR              R1, =NVIC_ST_RELOAD_R ;R1 = &NV
+                                                            IC_ST_RELOAD_R
+   45 00000022 F1A0 0001       SUB              R0, #1      ;Delay - 1
+   46 00000026 6008            STR              R0, [R1]    ;Store Value of R0 
+                                                            into the address of
+                                                             R1
+   47 00000028 490D            LDR              R1, =NVIC_ST_CTRL_R ;R1 = &NVIC
+                                                            _ST_CTRL_R
+   48 0000002A         Delay_LOOP
+   49 0000002A 680B            LDR              R3, [R1]    ;R0 = the value of 
+                                                            the address pointed
+                                                             by R1
+   50 0000002C F413 3380       ANDS             R3, R3, #0x00010000 ;Check to s
+                                                            ee if bit 4 has bee
+                                                            n set
+   51 00000030 D0FB            BEQ              Delay_LOOP  ;Loop till bit 4 ha
+                                                            s been set (12.5ns 
+                                                            * R0)
+   52 00000032         ;End
+   53 00000032 4770            BX               LR          ;Return
+   54 00000034         ;-------------------------------------------------------
+                       -------- End of Delay ----------------------------------
+                       ---------------------------
+   55 00000034         
+   56 00000034         ;-------------------------------------------------------
+                       ---------- Delay_10us ----------------------------------
+                       ----------------------------
+   57 00000034         ; 10us delay using Delay function 
+   58 00000034         ; Input: R0  delay parameter in units of the 10us delay 
+                        
+   59 00000034         ; Output: none     ; Modifies: R0, R1 
+   60 00000034         Delay_10us
+   61 00000034 B518            PUSH             {R4, R3, LR} ;Save the register
+                                                             R4, R3 and the LR 
+
+
+
+ARM Macro Assembler    Page 3 
+
+
+                                                            to stack
+   62 00000036 0004            MOVS             R4, R0      ;Move R0 into R4
+   63 00000038 D005            BEQ              Delay_10us_Done ;If R0 is 0 the
+                                                            n go to done
+   64 0000003A         Delay_10us_Loop
+   65 0000003A F44F 7048       LDR              R0, =Time_10us ;Counter that ma
+                                                            kes 10us delay (12.
+                                                            5ns * 80000 = 10us)
+                                                            
+   66 0000003E F7FF FFEF       BL               Delay       ;Branch to Delay fo
+                                                            r 10us
+   67 00000042 1E64            SUBS             R4, R4, #1  ;R4 = R4 - 1
+   68 00000044 D8F9            BHI              Delay_10us_Loop 
+                                                            ;Branch if  R4 > 0
+   69 00000046         Delay_10us_Done
+   70 00000046 BD18            POP              {R4, R3, PC} ;Restore R4, R3 re
+                                                            gister and LR from 
+                                                            stack into PC
+   71 00000048         ;End
+   72 00000048 4770            BX               LR          ;Return
+   73 0000004A         ;-------------------------------------------------------
+                       ------ End of Delay_10us -------------------------------
+                       ----------------------------
+   74 0000004A         
+   75 0000004A         ;-------------------------------------------------------
+                       -------- Delay_1250ns ----------------------------------
+                       ---------------------------
+   76 0000004A         ; 1250ns delay using Delay function 
+   77 0000004A         ; Input: R0  delay parameter in units of the 12.5ms dela
+                       y  
+   78 0000004A         ; Output: none     ; Modifies: R0, R1 
+   79 0000004A         Delay_1250ns
+   80 0000004A B518            PUSH             {R4, R3, LR} ;Save the register
+                                                             R4, R3 and the LR 
+                                                            to stack
+   81 0000004C 0004            MOVS             R4, R0      ;Move R0 into R4
+   82 0000004E D004            BEQ              Delay_1250ns_Done ;If R0 is 0 t
+                                                            hen go to done
+   83 00000050         Delay_1250ns_Loop
+   84 00000050 4807            LDR              R0, =Time_1250ns ;Counter that 
+                                                            makes 1250ns delay 
+                                                            (12.5ns * 100000 = 
+                                                            1250ns)
+   85 00000052 F7FF FFE5       BL               Delay       ;Branch to Delay fo
+                                                            r 1250ns
+   86 00000056 1E64            SUBS             R4, R4, #1  ;R4 = R4 - 1
+   87 00000058 D8FA            BHI              Delay_1250ns_Loop 
+                                                            ;Branch if  R4 > 0
+   88 0000005A         Delay_1250ns_Done
+   89 0000005A BD18            POP              {R4, R3, PC} ;Restore R4, R3 re
+                                                            gister and LR from 
+                                                            stack into PC
+   90 0000005C         ;End
+   91 0000005C 4770            BX               LR          ;Return
+   92 0000005E         ;-------------------------------------------------------
+                       ----- End of Delay_1250ns ------------------------------
+                       ---------------------------
+   93 0000005E         
+   94 0000005E         
+
+
+
+ARM Macro Assembler    Page 4 
+
+
+   95 0000005E 00 00           ALIGN
+   96 00000060                 END
+              E000E010 
+              E000E014 
+              00FFFFFF 
+              E000E018 
+              000186A0 
+Command Line: --debug --xref --cpu=Cortex-M4.fp --apcs=interwork --depend=.\sys
+tick.d -o.\systick.o -IC:\Keil\ARM\RV31\INC -IC:\Keil\ARM\CMSIS\Include -IC:\Ke
+il\ARM\Inc\TI\TM4C123 --predefine="__EVAL SETA 1" --list=.\systick.lst ..\Lab2-
+3\SysTick.s
+
+
+
+ARM Macro Assembler    Page 1 Alphabetic symbol ordering
+Relocatable symbols
+
+.text 00000000
+
+Symbol: .text
+   Definitions
+      At line 12 in file ..\Lab2-3\SysTick.s
+   Uses
+      None
+Comment: .text unused
+Delay 00000020
+
+Symbol: Delay
+   Definitions
+      At line 43 in file ..\Lab2-3\SysTick.s
+   Uses
+      At line 66 in file ..\Lab2-3\SysTick.s
+      At line 85 in file ..\Lab2-3\SysTick.s
+
+Delay_10us 00000034
+
+Symbol: Delay_10us
+   Definitions
+      At line 60 in file ..\Lab2-3\SysTick.s
+   Uses
+      At line 15 in file ..\Lab2-3\SysTick.s
+Comment: Delay_10us used once
+Delay_10us_Done 00000046
+
+Symbol: Delay_10us_Done
+   Definitions
+      At line 69 in file ..\Lab2-3\SysTick.s
+   Uses
+      At line 63 in file ..\Lab2-3\SysTick.s
+Comment: Delay_10us_Done used once
+Delay_10us_Loop 0000003A
+
+Symbol: Delay_10us_Loop
+   Definitions
+      At line 64 in file ..\Lab2-3\SysTick.s
+   Uses
+      At line 68 in file ..\Lab2-3\SysTick.s
+Comment: Delay_10us_Loop used once
+Delay_1250ns 0000004A
+
+Symbol: Delay_1250ns
+   Definitions
+      At line 79 in file ..\Lab2-3\SysTick.s
+   Uses
+      At line 16 in file ..\Lab2-3\SysTick.s
+Comment: Delay_1250ns used once
+Delay_1250ns_Done 0000005A
+
+Symbol: Delay_1250ns_Done
+   Definitions
+      At line 88 in file ..\Lab2-3\SysTick.s
+   Uses
+      At line 82 in file ..\Lab2-3\SysTick.s
+Comment: Delay_1250ns_Done used once
+Delay_1250ns_Loop 00000050
+
+
+
+
+ARM Macro Assembler    Page 2 Alphabetic symbol ordering
+Relocatable symbols
+
+Symbol: Delay_1250ns_Loop
+   Definitions
+      At line 83 in file ..\Lab2-3\SysTick.s
+   Uses
+      At line 87 in file ..\Lab2-3\SysTick.s
+Comment: Delay_1250ns_Loop used once
+Delay_LOOP 0000002A
+
+Symbol: Delay_LOOP
+   Definitions
+      At line 48 in file ..\Lab2-3\SysTick.s
+   Uses
+      At line 51 in file ..\Lab2-3\SysTick.s
+Comment: Delay_LOOP used once
+SysTick_Init 00000000
+
+Symbol: SysTick_Init
+   Definitions
+      At line 18 in file ..\Lab2-3\SysTick.s
+   Uses
+      At line 14 in file ..\Lab2-3\SysTick.s
+Comment: SysTick_Init used once
+10 symbols
+
+
+
+ARM Macro Assembler    Page 1 Alphabetic symbol ordering
+Absolute symbols
+
+NVIC_ST_CTRL_R E000E010
+
+Symbol: NVIC_ST_CTRL_R
+   Definitions
+      At line 5 in file ..\Lab2-3\SysTick.s
+   Uses
+      At line 20 in file ..\Lab2-3\SysTick.s
+      At line 32 in file ..\Lab2-3\SysTick.s
+      At line 47 in file ..\Lab2-3\SysTick.s
+
+NVIC_ST_CURRENT_R E000E018
+
+Symbol: NVIC_ST_CURRENT_R
+   Definitions
+      At line 7 in file ..\Lab2-3\SysTick.s
+   Uses
+      At line 28 in file ..\Lab2-3\SysTick.s
+Comment: NVIC_ST_CURRENT_R used once
+NVIC_ST_RELOAD_R E000E014
+
+Symbol: NVIC_ST_RELOAD_R
+   Definitions
+      At line 6 in file ..\Lab2-3\SysTick.s
+   Uses
+      At line 24 in file ..\Lab2-3\SysTick.s
+      At line 44 in file ..\Lab2-3\SysTick.s
+
+Time_10us 00000320
+
+Symbol: Time_10us
+   Definitions
+      At line 8 in file ..\Lab2-3\SysTick.s
+   Uses
+      At line 65 in file ..\Lab2-3\SysTick.s
+Comment: Time_10us used once
+Time_1250ns 000186A0
+
+Symbol: Time_1250ns
+   Definitions
+      At line 9 in file ..\Lab2-3\SysTick.s
+   Uses
+      At line 84 in file ..\Lab2-3\SysTick.s
+Comment: Time_1250ns used once
+5 symbols
+349 symbols in table

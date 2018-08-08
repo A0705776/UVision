@@ -1,0 +1,9 @@
+.\sysctl.o: C:\Keil\EE319Kware\driverlib\sysctl.c
+.\sysctl.o: C:\Keil\EE319Kware\inc/hw_ints.h
+.\sysctl.o: C:\Keil\EE319Kware\inc/hw_nvic.h
+.\sysctl.o: C:\Keil\EE319Kware\inc/hw_sysctl.h
+.\sysctl.o: C:\Keil\EE319Kware\inc/hw_types.h
+.\sysctl.o: C:\Keil\EE319Kware\driverlib/cpu.h
+.\sysctl.o: C:\Keil\EE319Kware\driverlib/debug.h
+.\sysctl.o: C:\Keil\EE319Kware\driverlib/interrupt.h
+.\sysctl.o: C:\Keil\EE319Kware\driverlib/sysctl.h

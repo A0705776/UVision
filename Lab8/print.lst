@@ -1,0 +1,515 @@
+
+
+
+ARM Macro Assembler    Page 1 
+
+
+    1 00000000         ; Print.s
+    2 00000000         ; Student names: change this to your names or look very 
+                       silly
+    3 00000000         ; Last modification date: change this to the last modifi
+                       cation date or look very silly
+    4 00000000         ; Runs on LM4F120 or TM4C123
+    5 00000000         ; EE319K lab 7 device driver for any LCD
+    6 00000000         ;
+    7 00000000         ; As part of Lab 7, students need to implement these LCD
+                       _OutDec and LCD_OutFix
+    8 00000000         ; This driver assumes two low-level LCD functions
+    9 00000000         ; ST7735_OutChar   outputs a single 8-bit ASCII characte
+                       r
+   10 00000000         ; ST7735_OutString outputs a null-terminated string 
+   11 00000000         
+   12 00000000                 IMPORT           ST7735_OutChar
+   13 00000000                 IMPORT           ST7735_OutString
+   14 00000000                 EXPORT           LCD_OutDec
+   15 00000000                 EXPORT           LCD_OutFix
+   16 00000000         
+   17 00000000 00000000 
+                       i       EQU              0           ; loop iterator, al
+                                                            so number of digits
+                                                             in number
+   18 00000000 00000004 
+                       digits  EQU              4           ; loop iterator, al
+                                                            so number of allowa
+                                                            ble digits in fixed
+                                                            -point
+   19 00000000 0000000A 
+                       modder  EQU              10          ; constant
+   20 00000000 00000030 
+                       zero    EQU              0x30        ; ASCII 0
+   21 00000000 0000002A 
+                       star    EQU              0x2A        ; ASCII *
+   22 00000000 0000002E 
+                       dot     EQU              0x2E        ; ASCII .
+   23 00000000         
+   24 00000000                 AREA             |.text|, CODE, READONLY, ALIGN=
+2
+   25 00000000                 THUMB
+   26 00000000         
+   27 00000000         
+   28 00000000         
+   29 00000000         ;-----------------------LCD_OutDec----------------------
+                       -
+   30 00000000         ; Output a 32-bit number in unsigned decimal format
+   31 00000000         ; Input: R0 (call by value) 32-bit unsigned number
+   32 00000000         ; Output: none
+   33 00000000         ; Modifies R0-R6
+   34 00000000         ; Invariables: This function must not permanently modify
+                        registers R4 to R11
+   35 00000000         LCD_OutDec
+   36 00000000 E92D 4FF1       PUSH             {R0,R4-R11,LR}
+   37 00000004         
+   38 00000004         ;Calculates number of digits in input
+   39 00000004 B507            PUSH             {R0-R2,LR}
+   40 00000006 F000 F869       BL               numDigits
+   41 0000000A 4604            MOV              R4,R0       ; stores return of 
+
+
+
+ARM Macro Assembler    Page 2 
+
+
+                                                            numDigits to temp r
+                                                            eg to not get clobb
+                                                            ered by POP
+   42 0000000C E8BD 4007       POP              {R0-R2,LR}
+   43 00000010 4621            MOV              R1,R4       ; restores numDigit
+                                                            s to R1
+   44 00000012         
+   45 00000012         ;CURRENT REGS: 
+   46 00000012         ;R0 = input
+   47 00000012         ;R1 = numDigits
+   48 00000012         ;R2 = divider value, 10^(numDigits-1)
+   49 00000012         
+   50 00000012         ;outputs number
+   51 00000012         outDigit
+   52 00000012 F04F 0201       MOV              R2,#1
+   53 00000016 460B            MOV              R3,R1       ; copy # digits to 
+                                                            become iterator for
+                                                             exp loop
+   54 00000018 F04F 040A       MOV              R4,#modder
+   55 0000001C 2901            CMP              R1,#1
+   56 0000001E D007            BEQ              out
+   57 00000020         
+   58 00000020 F1A3 0301       SUB              R3,#1
+   59 00000024         exp                                  ; decrements # digi
+                                                            ts
+   60 00000024 F1A3 0301       SUB              R3,#1
+   61 00000028 FB02 F204       MUL              R2,R4       ; multiplies divide
+                                                            r by 10 until corre
+                                                            ct divider reached 
+                                                            (10^(n-1))
+   62 0000002C 2B00            CMP              R3,#0
+   63 0000002E D1F9            BNE              exp
+   64 00000030         
+   65 00000030 FBB0 F5F2 
+                       out     UDIV             R5,R0,R2    ; Masks for first d
+                                                            igit
+   66 00000034 F105 0530       ADD              R5,#zero    ; Converts to ASCII
+                                                            
+   67 00000038 4606            MOV              R6,R0       ; Moves input to R6
+                                                            
+   68 0000003A 4628            MOV              R0,R5       ; Moves ASCII char 
+                                                            to R0
+   69 0000003C E92D 0FFF       PUSH             {R0-R11}
+   70 00000040 F7FF FFFE       BL               ST7735_OutChar
+   71 00000044 E8BD 0FFF       POP              {R0-R11}
+   72 00000048 F1A5 0530       SUB              R5,#zero    ; convert back to d
+                                                            ecimal
+   73 0000004C FB05 F502       MUL              R5,R2
+   74 00000050 EBA6 0005       SUB              R0,R6,R5    ; Masks away most s
+                                                            ignificant digit of
+                                                             input
+   75 00000054 F1A1 0101       SUB              R1,#1       ; updates numDigits
+                                                             for mask
+   76 00000058 2900            CMP              R1,#0
+   77 0000005A D1DA            BNE              outDigit
+   78 0000005C         
+   79 0000005C         
+   80 0000005C E8BD 4FF1       POP              {R0,R4-R11,LR}
+   81 00000060 4770            BX               LR
+
+
+
+ARM Macro Assembler    Page 3 
+
+
+   82 00000062         ;* * * * * * * * End of LCD_OutDec * * * * * * * *
+   83 00000062         
+   84 00000062         ; -----------------------LCD _OutFix--------------------
+                       --
+   85 00000062         ; Output characters to LCD display in fixed-point format
+                       
+   86 00000062         ; unsigned decimal, resolution 0.001, range 0.000 to 9.9
+                       99
+   87 00000062         ; Inputs:  R0 is an unsigned 32-bit number
+   88 00000062         ; Outputs: none
+   89 00000062         ; Modifies: R0-R3
+   90 00000062         ; E.g., R0=0,    then output "0.000 "
+   91 00000062         ;       R0=3,    then output "0.003 "
+   92 00000062         ;       R0=89,   then output "0.089 "
+   93 00000062         ;       R0=123,  then output "0.123 "
+   94 00000062         ;       R0=9999, then output "9.999 "
+   95 00000062         ;       R0>9999, then output "*.*** "
+   96 00000062         ; Invariables: This function must not permanently modify
+                        registers R4 to R11
+   97 00000062         LCD_OutFix
+   98 00000062 F242 710F       MOV              R1,#9999    ; if cannot be repr
+                                                            esented in format, 
+                                                            print "*.*** "
+   99 00000066 4288            CMP              R0,R1
+  100 00000068 D832            BHI              outstar
+  101 0000006A         
+  102 0000006A 4601            MOV              R1,R0       ; To protect from c
+                                                            lobbering input
+  103 0000006C F04F 0204       MOV              R2,#digits
+  104 00000070 F04F 030A       MOV              R3,#modder
+  105 00000074 F04F 0501       MOV              R5,#1
+  106 00000078 F1A2 0201       SUB              R2,#1
+  107 0000007C         
+  108 0000007C         exp2
+  109 0000007C FB05 F503       MUL              R5,R3       ; divider
+  110 00000080 3A01            SUBS             R2,#1
+  111 00000082 D1FB            BNE              exp2
+  112 00000084         ;R5 = 1000
+  113 00000084         printNum
+  114 00000084 FBB0 F0F5       UDIV             R0,R5       ; Print first numbe
+                                                            r
+  115 00000088 B57F            PUSH{R0-R6,LR}
+  116 0000008A F7FF FFFE       BL               LCD_OutDec
+  117 0000008E E8BD 407F       POP              {R0-R6,LR}
+  118 00000092 FB00 F005       MUL              R0,R5       ; decimal mask
+  119 00000096 EBA1 0100       SUB              R1,R0
+  120 0000009A 4608            MOV              R0,R1
+  121 0000009C FBB5 F5F3       UDIV             R5,R3       ; update divider
+  122 000000A0         
+  123 000000A0 B57F            PUSH             {R0-R6,LR}
+  124 000000A2 F04F 002E       MOV              R0,#dot     ; Print dot
+  125 000000A6 F7FF FFFE       BL               ST7735_OutChar
+  126 000000AA E8BD 407F       POP              {R0-R6,LR}
+  127 000000AE         
+  128 000000AE         nextNum
+  129 000000AE FBB0 F0F5       UDIV             R0,R5       ; mask first digit
+  130 000000B2 B57F            PUSH{R0-R6,LR}
+  131 000000B4 F7FF FFFE       BL               LCD_OutDec  ; print digit
+  132 000000B8 E8BD 407F       POP              {R0-R6,LR}
+
+
+
+ARM Macro Assembler    Page 4 
+
+
+  133 000000BC FB00 F005       MUL              R0,R5       ; remove first digi
+                                                            t by subtracting it
+                                                             from prev
+  134 000000C0 EBA1 0100       SUB              R1,R0
+  135 000000C4 4608            MOV              R0,R1
+  136 000000C6 FBB5 F5F3       UDIV             R5,R3       ; update divider
+  137 000000CA 2D00            CMP              R5, #0
+  138 000000CC D8EF            BHI              nextNum
+  139 000000CE D904            BLS              ret
+  140 000000D0         
+  141 000000D0         outstar                              ; print "invalid" s
+                                                            tring
+  142 000000D0 B501            PUSH             {R0,LR}
+  143 000000D2 F000 F813       BL               printString
+  144 000000D6 E8BD 4001       POP              {R0,LR}
+  145 000000DA         
+  146 000000DA 4770    ret     BX               LR
+  147 000000DC         
+  148 000000DC                 ALIGN
+  149 000000DC         ;* * * * * * * * End of LCD_OutFix * * * * * * * *
+  150 000000DC         
+  151 000000DC         ;-----------------------numDigits-----------------------
+                       
+  152 000000DC         ; Output number of digits of unsigned 32-bit number
+  153 000000DC         ; Input: R0 (call by value) 32-bit unsigned number
+  154 000000DC         ; Output: R0 number of digits
+  155 000000DC         ; Modifies: R0,R1,R2
+  156 000000DC         ; Invariables: This function must not permanently modify
+                        registers R4 to R11
+  157 000000DC         numDigits
+  158 000000DC F04F 0100       MOV              R1,#0       ;allocation
+  159 000000E0 B502            PUSH             {R1,LR}
+  160 000000E2 F04F 020A       MOV              R2, #modder
+  161 000000E6         count
+  162 000000E6 9900            LDR              R1,[SP,#i]  ;access - increment
+                                                             digit counter
+  163 000000E8 F101 0101       ADD              R1,#1
+  164 000000EC 9100            STR              R1,[SP,#i]
+  165 000000EE FBB0 F0F2       UDIV             R0,R2       ; divide by 10 (mas
+                                                            ks away one digit b
+                                                            y truncation)
+  166 000000F2 2800            CMP              R0,#0       ; check if there ar
+                                                            e more digits (i.e.
+                                                             integer part is no
+                                                            t 0)
+  167 000000F4 D1F7            BNE              count       ; if input is 0, re
+                                                            turn 0 as # digits
+  168 000000F6         
+  169 000000F6 B002            ADD              SP,#8       ;deallocation
+  170 000000F8 4608            MOV              R0,R1
+  171 000000FA 4770            BX               LR
+  172 000000FC         ;* * * * * * * * End of numDigits * * * * * * * *
+  173 000000FC         
+  174 000000FC         ;-----------------------printString---------------------
+                       --
+  175 000000FC         ; Print string "*.***"
+  176 000000FC         ; Input: none
+  177 000000FC         ; Output: none
+  178 000000FC         ; Modifies: R0
+
+
+
+ARM Macro Assembler    Page 5 
+
+
+  179 000000FC         ; Invariables: This function must not permanently modify
+                        registers R4 to R11
+  180 000000FC         printString
+  181 000000FC B501            PUSH             {R0,LR}
+  182 000000FE         
+  183 000000FE F04F 002A       MOV              R0, #star
+  184 00000102 F7FF FFFE       BL               ST7735_OutChar
+  185 00000106 F04F 002E       MOV              R0, #dot
+  186 0000010A F7FF FFFE       BL               ST7735_OutChar
+  187 0000010E F04F 002A       MOV              R0, #star
+  188 00000112 F7FF FFFE       BL               ST7735_OutChar
+  189 00000116 F04F 002A       MOV              R0, #star
+  190 0000011A F7FF FFFE       BL               ST7735_OutChar
+  191 0000011E F04F 002A       MOV              R0, #star
+  192 00000122 F7FF FFFE       BL               ST7735_OutChar
+  193 00000126         
+  194 00000126 E8BD 4001       POP              {R0,LR}
+  195 0000012A 4770            BX               LR
+  196 0000012C         ;* * * * * * * * End of printString * * * * * * * *
+  197 0000012C         
+  198 0000012C         
+  199 0000012C         
+  200 0000012C                 ALIGN                        ; make sure the end
+                                                             of this section is
+                                                             aligned
+  201 0000012C                 END                          ; end of file
+Command Line: --debug --xref --cpu=Cortex-M4 --apcs=interwork --depend=.\print.
+d -o.\print.o -IC:\Keil\ARM\RV31\INC -IC:\Keil\ARM\CMSIS\Include -IC:\Keil\ARM\
+Inc\Luminary --predefine="__EVAL SETA 1" --list=.\print.lst Print.s
+
+
+
+ARM Macro Assembler    Page 1 Alphabetic symbol ordering
+Relocatable symbols
+
+.text 00000000
+
+Symbol: .text
+   Definitions
+      At line 24 in file Print.s
+   Uses
+      None
+Comment: .text unused
+LCD_OutDec 00000000
+
+Symbol: LCD_OutDec
+   Definitions
+      At line 35 in file Print.s
+   Uses
+      At line 14 in file Print.s
+      At line 116 in file Print.s
+      At line 131 in file Print.s
+
+LCD_OutFix 00000062
+
+Symbol: LCD_OutFix
+   Definitions
+      At line 97 in file Print.s
+   Uses
+      At line 15 in file Print.s
+Comment: LCD_OutFix used once
+count 000000E6
+
+Symbol: count
+   Definitions
+      At line 161 in file Print.s
+   Uses
+      At line 167 in file Print.s
+Comment: count used once
+exp 00000024
+
+Symbol: exp
+   Definitions
+      At line 59 in file Print.s
+   Uses
+      At line 63 in file Print.s
+Comment: exp used once
+exp2 0000007C
+
+Symbol: exp2
+   Definitions
+      At line 108 in file Print.s
+   Uses
+      At line 111 in file Print.s
+Comment: exp2 used once
+nextNum 000000AE
+
+Symbol: nextNum
+   Definitions
+      At line 128 in file Print.s
+   Uses
+      At line 138 in file Print.s
+Comment: nextNum used once
+numDigits 000000DC
+
+
+
+ARM Macro Assembler    Page 2 Alphabetic symbol ordering
+Relocatable symbols
+
+
+Symbol: numDigits
+   Definitions
+      At line 157 in file Print.s
+   Uses
+      At line 40 in file Print.s
+Comment: numDigits used once
+out 00000030
+
+Symbol: out
+   Definitions
+      At line 65 in file Print.s
+   Uses
+      At line 56 in file Print.s
+Comment: out used once
+outDigit 00000012
+
+Symbol: outDigit
+   Definitions
+      At line 51 in file Print.s
+   Uses
+      At line 77 in file Print.s
+Comment: outDigit used once
+outstar 000000D0
+
+Symbol: outstar
+   Definitions
+      At line 141 in file Print.s
+   Uses
+      At line 100 in file Print.s
+Comment: outstar used once
+printNum 00000084
+
+Symbol: printNum
+   Definitions
+      At line 113 in file Print.s
+   Uses
+      None
+Comment: printNum unused
+printString 000000FC
+
+Symbol: printString
+   Definitions
+      At line 180 in file Print.s
+   Uses
+      At line 143 in file Print.s
+Comment: printString used once
+ret 000000DA
+
+Symbol: ret
+   Definitions
+      At line 146 in file Print.s
+   Uses
+      At line 139 in file Print.s
+Comment: ret used once
+14 symbols
+
+
+
+ARM Macro Assembler    Page 1 Alphabetic symbol ordering
+Absolute symbols
+
+digits 00000004
+
+Symbol: digits
+   Definitions
+      At line 18 in file Print.s
+   Uses
+      At line 103 in file Print.s
+Comment: digits used once
+dot 0000002E
+
+Symbol: dot
+   Definitions
+      At line 22 in file Print.s
+   Uses
+      At line 124 in file Print.s
+      At line 185 in file Print.s
+
+i 00000000
+
+Symbol: i
+   Definitions
+      At line 17 in file Print.s
+   Uses
+      At line 162 in file Print.s
+      At line 164 in file Print.s
+
+modder 0000000A
+
+Symbol: modder
+   Definitions
+      At line 19 in file Print.s
+   Uses
+      At line 54 in file Print.s
+      At line 104 in file Print.s
+      At line 160 in file Print.s
+
+star 0000002A
+
+Symbol: star
+   Definitions
+      At line 21 in file Print.s
+   Uses
+      At line 183 in file Print.s
+      At line 187 in file Print.s
+      At line 189 in file Print.s
+      At line 191 in file Print.s
+
+zero 00000030
+
+Symbol: zero
+   Definitions
+      At line 20 in file Print.s
+   Uses
+      At line 66 in file Print.s
+      At line 72 in file Print.s
+
+6 symbols
+
+
+
+ARM Macro Assembler    Page 1 Alphabetic symbol ordering
+External symbols
+
+ST7735_OutChar 00000000
+
+Symbol: ST7735_OutChar
+   Definitions
+      At line 12 in file Print.s
+   Uses
+      At line 70 in file Print.s
+      At line 125 in file Print.s
+      At line 184 in file Print.s
+      At line 186 in file Print.s
+      At line 188 in file Print.s
+      At line 190 in file Print.s
+      At line 192 in file Print.s
+
+ST7735_OutString 00000000
+
+Symbol: ST7735_OutString
+   Definitions
+      At line 13 in file Print.s
+   Uses
+      None
+Comment: ST7735_OutString unused
+2 symbols
+353 symbols in table

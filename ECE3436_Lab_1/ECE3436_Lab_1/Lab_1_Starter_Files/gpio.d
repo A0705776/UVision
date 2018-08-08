@@ -1,0 +1,9 @@
+.\gpio.o: C:\Keil\EE319Kware\driverlib\gpio.c
+.\gpio.o: C:\Keil\EE319Kware\inc/hw_gpio.h
+.\gpio.o: C:\Keil\EE319Kware\inc/hw_ints.h
+.\gpio.o: C:\Keil\EE319Kware\inc/hw_memmap.h
+.\gpio.o: C:\Keil\EE319Kware\inc/hw_sysctl.h
+.\gpio.o: C:\Keil\EE319Kware\inc/hw_types.h
+.\gpio.o: C:\Keil\EE319Kware\driverlib/debug.h
+.\gpio.o: C:\Keil\EE319Kware\driverlib/gpio.h
+.\gpio.o: C:\Keil\EE319Kware\driverlib/interrupt.h

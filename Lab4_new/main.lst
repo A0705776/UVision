@@ -1,0 +1,1443 @@
+
+
+
+ARM Macro Assembler    Page 1 
+
+
+    1 00000000         ;****************** main.s ***************
+    2 00000000         ; Program written by: ***Alamin Ahmed & Tu Tran***
+    3 00000000         ; Date Created: 6/22/2017
+    4 00000000         ; Last Modified: 6/26/2017
+    5 00000000         ; Brief description of the program
+    6 00000000         ;   The LED toggles at 8 Hz and a varying duty-cycle
+    7 00000000         ;   Repeat the functionality from Lab2-3 but now we want
+                        you to 
+    8 00000000         ;   insert debugging instruments which gather data (stat
+                       e and timing)
+    9 00000000         ;   to verify that the system is functioning as expected
+                       .
+   10 00000000         ; Hardware connections (External: One button and one LED
+                       )
+   11 00000000         ;  PE1 is Button input  (1 means pressed, 0 means not pr
+                       essed)
+   12 00000000         ;  PE0 is LED output (1 activates external LED on protob
+                       oard)
+   13 00000000         ;  PF2 is Blue LED on Launchpad used as a heartbeat
+   14 00000000         ; Instrumentation data to be gathered is as follows:
+   15 00000000         ; After Button(PE1) press collect one state and time ent
+                       ry. 
+   16 00000000         ; After Buttin(PE1) release, collect 7 state and
+   17 00000000         ; time entries on each change in state of the LED(PE0): 
+                       
+   18 00000000         ; An entry is one 8-bit entry in the Data Buffer and one
+                        
+   19 00000000         ; 32-bit entry in the Time Buffer
+   20 00000000         ;  The Data Buffer entry (byte) content has:
+   21 00000000         ;    Lower nibble is state of LED (PE0)
+   22 00000000         ;    Higher nibble is state of Button (PE1)
+   23 00000000         ;  The Time Buffer entry (32-bit) has:
+   24 00000000         ;    24-bit value of the SysTick's Current register (NVI
+                       C_ST_CURRENT_R)
+   25 00000000         ; Note: The size of both buffers is 50 entries. Once you
+                        fill these
+   26 00000000         ;       entries you should stop collecting data
+   27 00000000         ; The heartbeat is an indicator of the running of the pr
+                       ogram. 
+   28 00000000         ; On each iteration of the main loop of your program tog
+                       gle the 
+   29 00000000         ; LED to indicate that your code(system) is live (not st
+                       uck or dead).
+   30 00000000         
+   31 00000000         ;    \\ 
+   32 00000000         ;    (o>
+   33 00000000         ; \\_//)
+   34 00000000         ;   \_/_)
+   35 00000000         ;   _|_
+   36 00000000         
+   37 00000000         ;-------------------------------------------------------
+                       --------- Definition -----------------------------------
+                       ----------------------------
+   38 00000000         ; PortE device registers 
+   39 00000000 400243FC 
+                       GPIO_PORTE_DATA_R
+                               EQU              0x400243FC
+   40 00000000 40024400 
+                       GPIO_PORTE_DIR_R
+
+
+
+ARM Macro Assembler    Page 2 
+
+
+                               EQU              0x40024400
+   41 00000000 40024420 
+                       GPIO_PORTE_AFSEL_R
+                               EQU              0x40024420
+   42 00000000 4002451C 
+                       GPIO_PORTE_DEN_R
+                               EQU              0x4002451C
+   43 00000000         ; PortF device registers
+   44 00000000 400253FC 
+                       GPIO_PORTF_DATA_R
+                               EQU              0x400253FC
+   45 00000000 40025400 
+                       GPIO_PORTF_DIR_R
+                               EQU              0x40025400
+   46 00000000 40025420 
+                       GPIO_PORTF_AFSEL_R
+                               EQU              0x40025420
+   47 00000000 40025510 
+                       GPIO_PORTF_PUR_R
+                               EQU              0x40025510
+   48 00000000 4002551C 
+                       GPIO_PORTF_DEN_R
+                               EQU              0x4002551C
+   49 00000000         ;peripheral clock registers
+   50 00000000 400FE608 
+                       SYSCTL_RCGCGPIO_R
+                               EQU              0x400FE608
+   51 00000000         ;address for the pins PE0, PE1, and PF4
+   52 00000000         ;can be used instead of ..._DATA_R, this way we don't ha
+                       ve to mask to specific pin
+   53 00000000 40024004 
+                       PE0     EQU              0x40024004
+   54 00000000 40024008 
+                       PE1     EQU              0x40024008
+   55 00000000 40025040 
+                       PF4     EQU              0x40025040
+   56 00000000         ;8 bit Address Length (depends on the placement of the D
+                       ataBuffer in the RAM, need to 1st thing iitialize)
+   57 00000000 20000032 
+                       NEntries
+                               EQU              0x20000032
+   58 00000000         ;Systicks timer
+   59 00000000 E000E018 
+                       NVIC_ST_CURRENT_R
+                               EQU              0xE000E018
+   60 00000000         ;-------------------------------------------------------
+                       ----- End of Definition --------------------------------
+                       ---------------------------
+   61 00000000                 THUMB                        ;using THUMB assemb
+                                                            ly instruction set
+   62 00000000         
+   63 00000000                 IMPORT           PLL_Init    ;From MCU_Clock to 
+                                                            setup 80MHz process
+                                                            or clock 
+   64 00000000                 IMPORT           Delay_10us  ;From SysTick to de
+                                                            lay 10us
+   65 00000000                 IMPORT           SysTick_Init ;From SysTick to i
+                                                            nitialize Ticks for
+                                                             Delay
+
+
+
+ARM Macro Assembler    Page 3 
+
+
+   66 00000000                 IMPORT           Delay_1250ns ;From SysTick to d
+                                                            elay 1250ns
+   67 00000000         
+   68 00000000                 AREA             DATA,ALIGN=2
+   69 00000000         
+   70 00000000 00 00 00 
+              00 00 00 
+              00 00 00 
+              00 00 00 
+              00 00 00 
+              00 00 00 
+              00 00 00 
+              00 00 00 
+              00 00 00 
+              00 00 00 
+              00 00 00 
+              00 00 00 
+              00 00 00 
+              00 00 00 
+              00 00 00 
+              00 00 00 
+              00 00    DataBuffer
+                               SPACE            50          ;Storing the PE1 (t
+                                                            he button) and the 
+                                                            PE0 (LED) state for
+                                                             debugging 
+   71 00000032 00 00 00 
+              00 00 00 
+              00 00 00 
+              00 00 00 
+              00 00 00 
+              00 00 00 
+              00 00 00 
+              00 00 00 
+              00 00 00 
+              00 00 00 
+              00 00 00 
+              00 00 00 
+              00 00 00 
+              00 00 00 
+              00 00 00 
+              00 00 00 
+              00 00 00 
+              00 00 00 
+              00 00 00 
+              00 00 00 
+              00 00 00 
+              00 00 00 
+              00 00 00 
+              00 00 00 
+              00 00 00 
+              00 00 00 
+              00 00 00 
+              00 00 00 
+              00 00 00 
+              00 00 00 
+              00 00 00 
+              00 00 00 
+              00 00 00 
+
+
+
+ARM Macro Assembler    Page 4 
+
+
+              00 00 00 
+              00 00 00 
+              00 00 00 
+              00 00 00 
+              00 00 00 
+              00 00 00 
+              00 00 00 
+              00 00 00 
+              00 00 00 
+              00 00 00 
+              00 00 00 
+              00 00 00 
+              00 00 00 
+              00 00 00 
+              00 00 00 
+              00 00 00 
+              00 00 00 
+              00 00 00 
+              00 00 00 
+              00 00 00 
+              00 00 00 
+              00 00 00 
+              00 00 00 
+              00 00 00 
+              00 00 00 
+              00 00 00 
+              00 00 00 
+              00 00 00 
+              00 00 00 
+              00 00 00 
+              00 00 00 
+              00 00 00 
+              00 00 00 
+              00 00    TimeBuffer
+                               SPACE            4*50        ;Storing the time s
+                                                            tamp of each state 
+                                                            for debugging 
+   72 000000FA 00 00 00 
+              00       DataPt  SPACE            4           ;DataBuffer pointer
+                                                             for the 8 bit arra
+                                                            y
+   73 000000FE 00 00 00 
+              00       TimePt  SPACE            4           ;TimeBuffer pointer
+                                                             for the 32 bit arr
+                                                            ay
+   74 00000102 00      DebugCounter
+                               SPACE            1           ;Save 7 Debug_Captu
+                                                            re counter
+   75 00000103         
+   76 00000103 00      LedOnTime
+                               SPACE            1           ;Store the LedOnTim
+                                                            e (8 bit) in the RA
+                                                            M
+   77 00000104 00      LedOffTime
+                               SPACE            1           ;Store the LedOffTi
+                                                            me (8 bit) in the R
+                                                            AM
+   78 00000105         
+   79 00000105                 AREA             |.text|, CODE, READONLY, ALIGN=
+
+
+
+ARM Macro Assembler    Page 5 
+
+
+2
+   80 00000000         
+   81 00000000                 EXPORT           Start
+   82 00000000         
+   83 00000000         ;-------------------------------------------------------
+                       ----------- Start --------------------------------------
+                       ----------------------------
+   84 00000000         Start
+   85 00000000 F000 F834       BL               Debug_Init  ;Initialize Debug
+   86 00000004 F7FF FFFE       BL               PLL_Init    ;Setup the system c
+                                                            lock
+   87 00000008 F7FF FFFE       BL               SysTick_Init ;Setup the Delay F
+                                                            unction
+   88 0000000C F000 F8C4       BL               init        ;Initialize all the
+                                                             pins
+   89 00000010 F000 F8B5       BL               init_variables ;Initialize glob
+                                                            al variables
+   90 00000014         ;-------------------------------------------------------
+                       ----------- Loop ---------------------------------------
+                       ----------------------------
+   91 00000014         loop
+   92 00000014         ;BL check_pin_F4     ;Check to see if the button SW1 was
+                        pressed, If yes then implement Breath
+   93 00000014 F000 F893       BL               check_pin_E1 ;Check to see if t
+                                                            he button on PE1 wa
+                                                            s pressed
+   94 00000018 F000 F85F       BL               blink_8Hz   ;Blink LED at 8Hz
+   95 0000001C F000 F8A9       BL               toggle_blue_led ;Heartbeat debu
+                                                            gging
+   96 00000020 E7F8            B                loop        ;Infinite loop
+   97 00000022         ;-------------------------------------------------------
+                       ------- End of Loop ------------------------------------
+                       ----------------------------
+   98 00000022         
+   99 00000022         ;-------------------------------------------------------
+                       ------ Debug_Capture -----------------------------------
+                       ----------------------------
+  100 00000022         Debug_Capture
+  101 00000022 B47F            PUSH             {R0-R6}     ;Save the registers
+                                                            
+  102 00000024         
+  103 00000024 4A73            LDR              R2, =DebugCounter 
+                                                            ;R2 = &DebugCounter
+                                                            
+  104 00000026 7813            LDRB             R3, [R2]    ;R3 = value of R2
+  105 00000028 2B00            CMP              R3,#0       ;Compare the counte
+                                                            r
+  106 0000002A D91D            BLS              Debug_Capture_End ;If R3 > 0 th
+                                                            en go to Debug_Capt
+                                                            ure
+  107 0000002C F1A3 0301       SUB              R3, #1      ;Subtruct one from 
+                                                            the counter
+  108 00000030 7013            STRB             R3, [R2]    ;Save the counter
+  109 00000032         
+  110 00000032 4971            LDR              R1,=NEntries ;R1 = &NEntries, u
+                                                            se for the NEntries
+                                                             of the loop 
+  111 00000034 4A71            LDR              R2,=DataPt  ;R2 = &DataPt
+  112 00000036 6815            LDR              R5, [R2]    ;R5 = value of R2
+
+
+
+ARM Macro Assembler    Page 6 
+
+
+  113 00000038 428D            CMP              R5, R1      ;Compare R5 with R1
+                                                            
+  114 0000003A D215            BHS              Debug_Capture_End ;If R5 >= R1 
+                                                            then exit
+  115 0000003C 4B70            LDR              R3,=TimePt  ;R3 = &TimePt
+  116 0000003E 681E            LDR              R6, [R3]    ;R6 = value of R3
+  117 00000040         
+  118 00000040 4970            LDR              R1,=GPIO_PORTE_DATA_R ;R1 = &GP
+                                                            IO_PORTE_DATA_R
+  119 00000042 6808            LDR              R0, [R1]    ;R0 = the value of 
+                                                            the address pointed
+                                                             by R1
+  120 00000044 F000 0402       AND              R4, R0, #0x02 
+                                                            ;R4 = R0 & 00000010
+                                                            
+  121 00000048 EA4F 04C4       LSL              R4, R4, #3  ;R4 = R4 << 3
+  122 0000004C F000 0001       AND              R0, #0x01   ;R0 = R0 & 00000001
+                                                            
+  123 00000050 EA44 0400       ORR              R4, R0      ;R4 = R4 | R0
+  124 00000054 702C            STRB             R4, [R5]    ;Store the PE0 and 
+                                                            PE1 State
+  125 00000056         
+  126 00000056 496C            LDR              R1,=NVIC_ST_CURRENT_R ;R1 = &NV
+                                                            IC_ST_CURRENT_R
+  127 00000058 6808            LDR              R0, [R1]    ;R0 = the value of 
+                                                            the address pointed
+                                                             by R1
+  128 0000005A 6030            STR              R0, [R6]    ;R3 = R0
+  129 0000005C F105 0501       ADD              R5, #1      ;Increment R2 by 1 
+                                                            for 8 bit
+  130 00000060 F106 0604       ADD              R6, #4      ;Increment R3 by 4 
+                                                            for 32 bit
+  131 00000064 6015            STR              R5, [R2]    ;Store R2
+  132 00000066 601E            STR              R6, [R3]    ;Store R3
+  133 00000068         Debug_Capture_End
+  134 00000068 BC7F            POP              {R0-R6}     ;Restore the regist
+                                                            ers and go back
+  135 0000006A 4770            BX               LR          ;Go Back   
+  136 0000006C         ;-------------------------------------------------------
+                       -- End of Debug_Capture --------------------------------
+                       ----------------------------
+  137 0000006C         
+  138 0000006C         ;-------------------------------------------------------
+                       -------- Debug_Init ------------------------------------
+                       ----------------------------
+  139 0000006C         Debug_Init
+  140 0000006C 4863            LDR              R0,=DataPt  ;R0 = &DataPt
+  141 0000006E 4964            LDR              R1,=TimePt  ;R1 = &TimePt
+  142 00000070 4A66            LDR              R2,=DataBuffer 
+                                                            ;R2 = &DataBuffer
+  143 00000072 4B67            LDR              R3,=TimeBuffer 
+                                                            ;R3 = &TimeBuffer
+  144 00000074 6002            STR              R2, [R0]    ;R0 = R2, initializ
+                                                            ing R0
+  145 00000076 600B            STR              R3, [R1]    ;R1 = R3, initializ
+                                                            ing R1
+  146 00000078         
+  147 00000078 495F            LDR              R1,=NEntries ;R1 = &NEntries, u
+                                                            se for the NEntries
+
+
+
+ARM Macro Assembler    Page 7 
+
+
+                                                             of the loop
+  148 0000007A         
+  149 0000007A         Debug_Init_loop
+  150 0000007A F04F 00FF       MOV              R0,#0xFF    ;R0 = 0xFF
+  151 0000007E 7010            STRB             R0,[R2]     ;R2 = R0, initializ
+                                                            ing R2
+  152 00000080 F102 0201       ADD              R2,#1       ;R2 = R2 + 1, move 
+                                                            to next 8 bit addre
+                                                            ss
+  153 00000084 F04F 30FF       MOV              R0,#0xFFFFFFFF ;R0 = 0xFFFFFFFF
+                                                            
+  154 00000088 6018            STR              R0,[R3]     ;R3 = R0, initializ
+                                                            ing R3
+  155 0000008A F103 0304       ADD              R3,#4       ;R3 = R3 + 4, move 
+                                                            to next 32 bit addr
+                                                            ess
+  156 0000008E 428A            CMP              R2, R1      ;Compare R2 with R1
+                                                            
+  157 00000090 D3F3            BLO              Debug_Init_loop ;If R2 < R1 the
+                                                            n go to Debug_Init_
+                                                            loop
+  158 00000092         ;End 
+  159 00000092 4770            BX               LR          ;Go Back   
+  160 00000094         ;-------------------------------------------------------
+                       ---- End of Debug_Init ---------------------------------
+                       ----------------------------
+  161 00000094         
+  162 00000094         ;-------------------------------------------------------
+                       ------- check_pin_F4 -----------------------------------
+                       ----------------------------
+  163 00000094         check_pin_F4
+  164 00000094 B500            PUSH             {LR}        ;Save the LR
+  165 00000096 F44F 7216       MOV              R2, #600    ;R2 = 600, running 
+                                                            at 166.66 Hz
+  166 0000009A 4613            MOV              R3, R2      ;R3 = R2
+  167 0000009C         check_btn
+  168 0000009C 495D            LDR              R1, =PF4    ;R1 = &PF4
+  169 0000009E 6808            LDR              R0, [R1]    ;R0 = the value of 
+                                                            the address pointed
+                                                             by R1
+  170 000000A0 2800            CMP              R0, #0      ;Check to see if th
+                                                            e pin is HIGH
+  171 000000A2 D000            BEQ              start_breath ;If LOW then go to
+                                                             start_breath 
+  172 000000A4         ;End 
+  173 000000A4 BD00            POP              {PC}        ;Restore LR to PC, 
+                                                            act as BX LR
+  174 000000A6         start_breath
+  175 000000A6 4618            MOV              R0, R3      ;R0 = R3, for the d
+                                                            elay function
+  176 000000A8 F7FF FFFE       BL               Delay_10us  ;Delay R0*10us
+  177 000000AC F000 F85B       BL               toggle_led  ;turn on/off the LE
+                                                            D
+  178 000000B0 F5C3 7016       RSB              R0, R3, #600 ;Reverse Subtract,
+                                                             R0 = 600 - R3
+  179 000000B4 F7FF FFFE       BL               Delay_10us  ;Delay R0*10us
+  180 000000B8 F000 F855       BL               toggle_led  ;turn on/off the LE
+                                                            D
+  181 000000BC 2A00            CMP              R2, #0      ;compare R2 with 0
+
+
+
+ARM Macro Assembler    Page 8 
+
+
+  182 000000BE D806            BHI              breath_down ;If higher than 0 t
+                                                            hen go to breath_do
+                                                            wn
+  183 000000C0 F5B3 7F16       CMP              R3, #600    ;compare R3 with 60
+                                                            0
+  184 000000C4 D307            BLO              breath_up   ;If less than 30 th
+                                                            en go to breath_up
+  185 000000C6         ;Reset  
+  186 000000C6 F44F 7216       MOV              R2, #600    ;R2 = 600
+  187 000000CA 4613            MOV              R3, R2      ;R3 = R2
+  188 000000CC E7E6            B                check_btn   ;Go Back to check t
+                                                            he button
+  189 000000CE         breath_down
+  190 000000CE F1A2 0201       SUB              R2, #1      ;R2 = R2 - 1
+  191 000000D2 4613            MOV              R3, R2      ;R3 = R2
+  192 000000D4 E7E2            B                check_btn   ;Go Back to check t
+                                                            he button
+  193 000000D6         breath_up
+  194 000000D6 3301            ADDS             R3, #1      ;R3 = R3 + 1
+  195 000000D8 E7E0            B                check_btn   ;Go Back to check t
+                                                            he button
+  196 000000DA         ;-------------------------------------------------------
+                       --- End of check_pin_F4 --------------------------------
+                       ----------------------------
+  197 000000DA         
+  198 000000DA         ;-------------------------------------------------------
+                       -------- blink_8Hz -------------------------------------
+                       ----------------------------
+  199 000000DA         ;Each paulse takes 125ms
+  200 000000DA         blink_8Hz
+  201 000000DA B500            PUSH             {LR}        ;Save the LR
+  202 000000DC         
+  203 000000DC F7FF FFA1       BL               Debug_Capture ;If R3 > 0 then g
+                                                            o to Debug_Capture
+  204 000000E0         
+  205 000000E0 F000 F835       BL               led_on      ;Turn on the LED
+  206 000000E4 494C            LDR              R1, =LedOnTime ;R1 = &LedOnTime
+                                                            
+  207 000000E6 7808            LDRB             R0, [R1]    ;R0 = the value of 
+                                                            the address pointed
+                                                             by R1, B for 8 bit
+                                                            
+  208 000000E8 F7FF FFFE       BL               Delay_1250ns ;Delay (R0*1250)ns
+                                                            
+  209 000000EC         
+  210 000000EC F7FF FF99       BL               Debug_Capture ;If R3 > 0 then g
+                                                            o to Debug_Capture
+  211 000000F0         
+  212 000000F0 F000 F833       BL               led_off     ;Turn off the LED
+  213 000000F4 4949            LDR              R1, =LedOffTime 
+                                                            ;R1 = &LedOffTime
+  214 000000F6 7808            LDRB             R0, [R1]    ;R0 = the value of 
+                                                            the address pointed
+                                                             by R1, B for 8 bit
+                                                            
+  215 000000F8 F7FF FFFE       BL               Delay_1250ns ;Delay (R0*1250)ns
+                                                            
+  216 000000FC         ;End 
+  217 000000FC BD00            POP              {PC}        ;Restore LR to PC, 
+
+
+
+ARM Macro Assembler    Page 9 
+
+
+                                                            act as BX LR
+  218 000000FE         ;  BX LR       ;Go Back
+  219 000000FE         ;-------------------------------------------------------
+                       ----- End of blink_8Hz ---------------------------------
+                       ----------------------------
+  220 000000FE         
+  221 000000FE         ;-------------------------------------------------------
+                       -------- switch_duty -----------------------------------
+                       ----------------------------
+  222 000000FE         switch_duty
+  223 000000FE 4A3D            LDR              R2, =DebugCounter 
+                                                            ;R1 = &DebugCounter
+                                                            
+  224 00000100 F04F 0308       MOV              R3, #8      ;R0 = 8, start Debu
+                                                            g_Capture, 8 becaus
+                                                            e we are calling De
+                                                            bug_Capture within 
+                                                            this function
+  225 00000104 7013            STRB             R3, [R2]    ;Store Value of R0 
+                                                            into the address of
+                                                             R1, B for 8 bit
+  226 00000106 F7FF FF8C       BL               Debug_Capture ;Capture Data
+  227 0000010A F644 6020       MOV              R0, #20000  ;R0 = 20000
+  228 0000010E F7FF FFFE       BL               Delay_10us  ;Debounch Delay 200
+                                                            00*10us = 200ms
+  229 00000112 4941            LDR              R1, =LedOnTime ;R1 = &LedOnTime
+                                                            
+  230 00000114 7808            LDRB             R0, [R1]    ;R0 = the value of 
+                                                            the address pointed
+                                                             by R1, B for 8 bit
+                                                            
+  231 00000116 2864            CMP              R0, #100    ;Check to see if R0
+                                                             = 100
+  232 00000118 D008            BEQ              reset_duty  ;If equal then go t
+                                                            o reset_duty
+  233 0000011A F100 0014       ADD              R0, #20     ;R0 = R0 + 20
+  234 0000011E 7008            STRB             R0, [R1]    ;Store Value of R0 
+                                                            into the address of
+                                                             R1, B for 8 bit  
+  235 00000120 493E            LDR              R1, =LedOffTime 
+                                                            ;R1 = &LedOffTime
+  236 00000122 7808            LDRB             R0, [R1]    ;R0 = the value of 
+                                                            the address pointed
+                                                             by R1, B for 8 bit
+                                                            
+  237 00000124 F1A0 0014       SUB              R0, #20     ;R0 = R0 - 20
+  238 00000128 7008            STRB             R0, [R1]    ;Store Value of R0 
+                                                            into the address of
+                                                             R1, B for 8 bit 
+  239 0000012A E00F            B                End_check_pin_E1 ;Go Back to ch
+                                                            eck_pin_E1
+  240 0000012C         ;-------------------------------------------------------
+                       --- End of switch_duty ---------------------------------
+                       ---------------------------
+  241 0000012C         
+  242 0000012C         ;-------------------------------------------------------
+                       ------- reset_duty -------------------------------------
+                       ---------------------------
+  243 0000012C         reset_duty
+
+
+
+ARM Macro Assembler    Page 10 
+
+
+  244 0000012C 493A            LDR              R1, =LedOnTime ;R1 = &LedOnTime
+                                                            
+  245 0000012E F04F 0000       MOV              R0, #0      ;R0 = 1
+  246 00000132 7008            STRB             R0, [R1]    ;Store Value of R0 
+                                                            into the address of
+                                                             R1, B for 8 bit
+  247 00000134 4939            LDR              R1, =LedOffTime 
+                                                            ;R1 = &LedOffTime
+  248 00000136 F04F 0064       MOV              R0, #100    ;R0 = 1
+  249 0000013A 7008            STRB             R0, [R1]    ;Store Value of R0 
+                                                            into the address of
+                                                             R1, B for 8 bit 
+  250 0000013C E006            B                End_check_pin_E1 ;Go Back to ch
+                                                            eck_pin_E1
+  251 0000013E         ;-------------------------------------------------------
+                       ---- End of reset_duty ---------------------------------
+                       ----------------------------
+  252 0000013E         
+  253 0000013E         ;-------------------------------------------------------
+                       ------- check_pin_E1 -----------------------------------
+                       ----------------------------
+  254 0000013E         check_pin_E1
+  255 0000013E B500            PUSH             {LR}        ;Save the LR
+  256 00000140 4930            LDR              R1, =GPIO_PORTE_DATA_R ;R1 = &G
+                                                            PIO_PORTE_DATA_R
+  257 00000142 6808            LDR              R0, [R1]    ;R0 = the value of 
+                                                            the address pointed
+                                                             by R1
+  258 00000144 F000 0002       AND              R0, R0, #0x02 ;Mask bit 2 for p
+                                                            in E1
+  259 00000148 2802            CMP              R0, #0x02   ;Check to see if th
+                                                            e pin is HIGH
+  260 0000014A D0D8            BEQ              switch_duty ;If HIGH then go to
+                                                             switch_state 
+  261 0000014C         End_check_pin_E1
+  262 0000014C BD00            POP              {PC}        ;Restore LR to PC, 
+                                                            act as BX LR
+  263 0000014E         ;  BX LR       ;Go Back
+  264 0000014E         ;-------------------------------------------------------
+                       --- End of check_pin_E1 --------------------------------
+                       ----------------------------
+  265 0000014E         
+  266 0000014E         ;-------------------------------------------------------
+                       --------- led_on ---------------------------------------
+                       ----------------------------
+  267 0000014E         led_on
+  268 0000014E 492D            LDR              R1, =GPIO_PORTE_DATA_R ;R1 = &G
+                                                            PIO_PORTE_DATA_R
+  269 00000150 6808            LDR              R0, [R1]    ;R0 = the value of 
+                                                            the address pointed
+                                                             by SYSCTL_RCGCGPIO
+                                                            _R
+  270 00000152 F040 0001       ORR              R0, R0, #0x01 ;Set bit 1 for pi
+                                                            n E0
+  271 00000156 6008            STR              R0, [R1]    ;Store Value of R0 
+                                                            into the address of
+                                                             R1
+  272 00000158         ;End 
+  273 00000158 4770            BX               LR          ;Go Back
+
+
+
+ARM Macro Assembler    Page 11 
+
+
+  274 0000015A         ;-------------------------------------------------------
+                       ------ End of led_on -----------------------------------
+                       ----------------------------
+  275 0000015A         
+  276 0000015A         ;-------------------------------------------------------
+                       --------- led_off --------------------------------------
+                       ----------------------------
+  277 0000015A         led_off
+  278 0000015A 492A            LDR              R1, =GPIO_PORTE_DATA_R ;R1 = &G
+                                                            PIO_PORTE_DATA_R
+  279 0000015C 6808            LDR              R0, [R1]    ;R0 = the value of 
+                                                            the address pointed
+                                                             by SYSCTL_RCGCGPIO
+                                                            _R
+  280 0000015E F020 0001       AND              R0, R0, #~0x01 ;Reset bit 1 for
+                                                             pin E0
+  281 00000162 6008            STR              R0, [R1]    ;Store Value of R0 
+                                                            into the address of
+                                                             R1
+  282 00000164         ;End 
+  283 00000164 4770            BX               LR          ;Go Back
+  284 00000166         ;-------------------------------------------------------
+                       ----- End of led_off -----------------------------------
+                       ----------------------------
+  285 00000166         
+  286 00000166         ;-------------------------------------------------------
+                       -------- toggle_led ------------------------------------
+                       ----------------------------
+  287 00000166         toggle_led
+  288 00000166 4927            LDR              R1, =GPIO_PORTE_DATA_R ;R1 = &G
+                                                            PIO_PORTE_DATA_R
+  289 00000168 6808            LDR              R0, [R1]    ;R0 = the value of 
+                                                            the address pointed
+                                                             by SYSCTL_RCGCGPIO
+                                                            _R
+  290 0000016A F080 0001       EOR              R0, R0, #0x01 ;Toggle bit 1 for
+                                                             pin E0
+  291 0000016E 6008            STR              R0, [R1]    ;Store Value of R0 
+                                                            into the address of
+                                                             R1
+  292 00000170         ;End 
+  293 00000170 4770            BX               LR          ;Go Back
+  294 00000172         ;-------------------------------------------------------
+                       ---- End of toggle_led ---------------------------------
+                       ----------------------------
+  295 00000172         
+  296 00000172         ;-------------------------------------------------------
+                       ----- toggle_blue_led ----------------------------------
+                       ----------------------------
+  297 00000172         toggle_blue_led
+  298 00000172 492B            LDR              R1, =GPIO_PORTF_DATA_R ;R1 = &G
+                                                            PIO_PORTE_DATA_R
+  299 00000174 6808            LDR              R0, [R1]    ;R0 = the value of 
+                                                            the address pointed
+                                                             by SYSCTL_RCGCGPIO
+                                                            _R
+  300 00000176 F080 0004       EOR              R0, R0, #0x04 ;Toggle bit 1 for
+                                                             pin E0
+  301 0000017A 6008            STR              R0, [R1]    ;Store Value of R0 
+
+
+
+ARM Macro Assembler    Page 12 
+
+
+                                                            into the address of
+                                                             R1
+  302 0000017C         ;End 
+  303 0000017C 4770            BX               LR          ;Go Back
+  304 0000017E         ;-------------------------------------------------------
+                       -- End of toggle_blue_led ------------------------------
+                       ----------------------------
+  305 0000017E         
+  306 0000017E         ;-------------------------------------------------------
+                       ------ init_variables ----------------------------------
+                       ----------------------------
+  307 0000017E         init_variables
+  308 0000017E 4926            LDR              R1, =LedOnTime ;R1 = &LedOnTime
+                                                            
+  309 00000180 F04F 0014       MOV              R0, #20     ;R0 = 1
+  310 00000184 7008            STRB             R0, [R1]    ;Store Value of R0 
+                                                            into the address of
+                                                             R1, B for 8 bit
+  311 00000186 4925            LDR              R1, =LedOffTime 
+                                                            ;R1 = &LedOffTime
+  312 00000188 F04F 0050       MOV              R0, #80     ;R0 = 1
+  313 0000018C 7008            STRB             R0, [R1]    ;Store Value of R0 
+                                                            into the address of
+                                                             R1, B for 8 bit
+  314 0000018E 4919            LDR              R1, =DebugCounter 
+                                                            ;R1 = &DebugCounter
+                                                            
+  315 00000190 F04F 0000       MOV              R0, #0      ;R0 = 1
+  316 00000194 7008            STRB             R0, [R1]    ;Store Value of R0 
+                                                            into the address of
+                                                             R1, B for 8 bit
+  317 00000196         ;End 
+  318 00000196 4770            BX               LR          ;Go Back
+  319 00000198         ;-------------------------------------------------------
+                       -- End of init_variables -------------------------------
+                       ----------------------------
+  320 00000198         
+  321 00000198         ;-------------------------------------------------------
+                       ---------- init ----------------------------------------
+                       ----------------------------
+  322 00000198         init
+  323 00000198         ;PortF_and_E_Clock      ;Activate clock for Port F and E
+                       
+  324 00000198 4922            LDR              R1, =SYSCTL_RCGCGPIO_R ;R1 = &S
+                                                            YSCTL_RCGCGPIO_R
+  325 0000019A 6808            LDR              R0, [R1]    ;R0 = the value of 
+                                                            the address pointed
+                                                             by SYSCTL_RCGCGPIO
+                                                            _R
+  326 0000019C F040 0030       ORR              R0, R0, #0x30 ;Set bit 5 (for F
+                                                            ) and bit 4 (for E)
+                                                             to turn on the clo
+                                                            ck
+  327 000001A0 6008            STR              R0, [R1]    ;Store Value of R0 
+                                                            into the address of
+                                                             R1
+  328 000001A2 BF00            NOP                          ;no operation (1 cl
+                                                            ock cycle), requre 
+                                                            2 clock cycle to fi
+
+
+
+ARM Macro Assembler    Page 13 
+
+
+                                                            nish setting up
+  329 000001A4 BF00            NOP                          ;no operation (1 cl
+                                                            ock cycle)
+  330 000001A6         
+  331 000001A6         ;PortF4_DIR_setup      ;Activate pin F4 as Input
+  332 000001A6 4920            LDR              R1, =GPIO_PORTF_DIR_R ;R1 = &GP
+                                                            IO_PORTF_DIR_R
+  333 000001A8 6808            LDR              R0, [R1]    ;R0 = the value of 
+                                                            the address pointed
+                                                             by GPIO_PORTF_DIR_
+                                                            R
+  334 000001AA F020 0010       AND              R0, R0, #~0x10 ;Set bit 4 (for 
+                                                            F4), 0 means input 
+                                                            1 means output (thi
+                                                            s ensure only bit 4
+                                                             changes)
+  335 000001AE 6008            STR              R0, [R1]    ;Store Value of R0 
+                                                            into the address of
+                                                             R1
+  336 000001B0         
+  337 000001B0         ;PortF4_PUR_setup      ;Add pull-up configuration on F4
+  338 000001B0 491E            LDR              R1, =GPIO_PORTF_PUR_R ;R1 = &GP
+                                                            IO_PORTF_PUR_R
+  339 000001B2 6808            LDR              R0, [R1]    ;R0 = the value of 
+                                                            the address pointed
+                                                             by GPIO_PORTF_PUR_
+                                                            R
+  340 000001B4 F040 0010       ORR              R0, R0, #0x10 ;Set bit 4 (for F
+                                                            4),1 means pull-up 
+                                                            0 means none (this 
+                                                            ensure only bit 4 c
+                                                            hanges)
+  341 000001B8 6008            STR              R0, [R1]    ;Store Value of R0 
+                                                            into the address of
+                                                             R1
+  342 000001BA         
+  343 000001BA         ;PortF4_DEN_setup      ;Enable F4
+  344 000001BA 491D            LDR              R1, =GPIO_PORTF_DEN_R ;R1 = &GP
+                                                            IO_PORTF_DEN_R
+  345 000001BC 6808            LDR              R0, [R1]    ;R0 = the value of 
+                                                            the address pointed
+                                                             by GPIO_PORTF_DEN_
+                                                            R
+  346 000001BE F040 0010       ORR              R0, R0, #0x10 ;set bit 4 (for F
+                                                            4),1 means enable 0
+                                                             means disable (thi
+                                                            s ensure only bit 4
+                                                             changes)
+  347 000001C2 6008            STR              R0, [R1]    ;Store Value of R0 
+                                                            into the address of
+                                                             R1
+  348 000001C4         
+  349 000001C4         ;PortF2_DIR_setup      ;Activate pin F2 as Output
+  350 000001C4 4918            LDR              R1, =GPIO_PORTF_DIR_R ;R1 = &GP
+                                                            IO_PORTF_DIR_R
+  351 000001C6 6808            LDR              R0, [R1]    ;R0 = the value of 
+                                                            the address pointed
+                                                             by GPIO_PORTF_DIR_
+                                                            R
+
+
+
+ARM Macro Assembler    Page 14 
+
+
+  352 000001C8 F040 0004       ORR              R0, R0, #0x04 ;Set bit 2 (for F
+                                                            4), 0 means input 1
+                                                             means output (this
+                                                             ensure only bit 2 
+                                                            changes)
+  353 000001CC 6008            STR              R0, [R1]    ;Store Value of R0 
+                                                            into the address of
+                                                             R1
+  354 000001CE         
+  355 000001CE         ;PortF2_DEN_setup      ;Enable F4
+  356 000001CE 4918            LDR              R1, =GPIO_PORTF_DEN_R ;R1 = &GP
+                                                            IO_PORTF_DEN_R
+  357 000001D0 6808            LDR              R0, [R1]    ;R0 = the value of 
+                                                            the address pointed
+                                                             by GPIO_PORTF_DEN_
+                                                            R
+  358 000001D2 F040 0004       ORR              R0, R0, #0x04 ;set bit 2 (for F
+                                                            4),1 means enable 0
+                                                             means disable (thi
+                                                            s ensure only bit 2
+                                                             changes)
+  359 000001D6 6008            STR              R0, [R1]    ;Store Value of R0 
+                                                            into the address of
+                                                             R1
+  360 000001D8         
+  361 000001D8         ;PortE0_and_E1_DIR_setup    ;Activate pin E0 Output (LED
+                       ) and E1 as Input
+  362 000001D8 4916            LDR              R1, =GPIO_PORTE_DIR_R ;R1 = &GP
+                                                            IO_PORTE_DIR_R
+  363 000001DA 6808            LDR              R0, [R1]    ;R0 = the value of 
+                                                            the address pointed
+                                                             by GPIO_PORTE_DIR_
+                                                            R
+  364 000001DC F020 0002       AND              R0, R0, #~0x02 ;Set bit 1 (for 
+                                                            E1), 0 means input 
+                                                            1 means input (this
+                                                             ensure only bit 1 
+                                                            changes)
+  365 000001E0 F040 0001       ORR              R0, R0, #0x01 ;Set bit 0 (for E
+                                                            0),0 means input 1 
+                                                            means output (this 
+                                                            ensure only bit 0 c
+                                                            hanges)
+  366 000001E4 6008            STR              R0, [R1]    ;Store Value of R0 
+                                                            into the address of
+                                                             R1
+  367 000001E6         
+  368 000001E6         ;PortE0_and_E1_DEN_setup    ;Enable E0 and E1
+  369 000001E6 4914            LDR              R1, =GPIO_PORTE_DEN_R ;R1 = &GP
+                                                            IO_PORTE_DEN_R
+  370 000001E8 6808            LDR              R0, [R1]    ;R0 = the value of 
+                                                            the address pointed
+                                                             by GPIO_PORTE_DEN_
+                                                            R
+  371 000001EA F040 0003       ORR              R0, R0, #0x03 ;Set bit 0 and 1 
+                                                            (for E0 and E1),1 m
+                                                            eans enable 0 means
+                                                             disable (this ensu
+                                                            re only bit 0 and 1
+
+
+
+ARM Macro Assembler    Page 15 
+
+
+                                                             changes)
+  372 000001EE 6008            STR              R0, [R1]    ;Store Value of R0 
+                                                            into the address of
+                                                             R1
+  373 000001F0         ;End 
+  374 000001F0 4770            BX               LR          ;Go Back
+  375 000001F2         ;-------------------------------------------------------
+                       ----------- End of init --------------------------------
+                       ------------------------------
+  376 000001F2         
+  377 000001F2 00 00           ALIGN                        ; make sure the end
+                                                             of this section is
+                                                             aligned
+  378 000001F4                 END                          ; end of file
+              00000000 
+              20000032 
+              00000000 
+              00000000 
+              400243FC 
+              E000E018 
+              00000000 
+              00000000 
+              40025040 
+              00000000 
+              00000000 
+              400253FC 
+              400FE608 
+              40025400 
+              40025510 
+              4002551C 
+              40024400 
+              4002451C 
+Command Line: --debug --xref --cpu=Cortex-M4.fp --apcs=interwork --depend=.\mai
+n.d -o.\main.o -IC:\Keil\ARM\RV31\INC -IC:\Keil\ARM\CMSIS\Include -IC:\Keil\ARM
+\Inc\TI\TM4C123 --predefine="__EVAL SETA 1" --list=.\main.lst main.s
+
+
+
+ARM Macro Assembler    Page 1 Alphabetic symbol ordering
+Relocatable symbols
+
+DATA 00000000
+
+Symbol: DATA
+   Definitions
+      At line 68 in file main.s
+   Uses
+      None
+Comment: DATA unused
+DataBuffer 00000000
+
+Symbol: DataBuffer
+   Definitions
+      At line 70 in file main.s
+   Uses
+      At line 142 in file main.s
+Comment: DataBuffer used once
+DataPt 000000FA
+
+Symbol: DataPt
+   Definitions
+      At line 72 in file main.s
+   Uses
+      At line 111 in file main.s
+      At line 140 in file main.s
+
+DebugCounter 00000102
+
+Symbol: DebugCounter
+   Definitions
+      At line 74 in file main.s
+   Uses
+      At line 103 in file main.s
+      At line 223 in file main.s
+      At line 314 in file main.s
+
+LedOffTime 00000104
+
+Symbol: LedOffTime
+   Definitions
+      At line 77 in file main.s
+   Uses
+      At line 213 in file main.s
+      At line 235 in file main.s
+      At line 247 in file main.s
+      At line 311 in file main.s
+
+LedOnTime 00000103
+
+Symbol: LedOnTime
+   Definitions
+      At line 76 in file main.s
+   Uses
+      At line 206 in file main.s
+      At line 229 in file main.s
+      At line 244 in file main.s
+      At line 308 in file main.s
+
+TimeBuffer 00000032
+
+
+
+
+ARM Macro Assembler    Page 2 Alphabetic symbol ordering
+Relocatable symbols
+
+Symbol: TimeBuffer
+   Definitions
+      At line 71 in file main.s
+   Uses
+      At line 143 in file main.s
+Comment: TimeBuffer used once
+TimePt 000000FE
+
+Symbol: TimePt
+   Definitions
+      At line 73 in file main.s
+   Uses
+      At line 115 in file main.s
+      At line 141 in file main.s
+
+8 symbols
+
+
+
+ARM Macro Assembler    Page 1 Alphabetic symbol ordering
+Relocatable symbols
+
+.text 00000000
+
+Symbol: .text
+   Definitions
+      At line 79 in file main.s
+   Uses
+      None
+Comment: .text unused
+Debug_Capture 00000022
+
+Symbol: Debug_Capture
+   Definitions
+      At line 100 in file main.s
+   Uses
+      At line 203 in file main.s
+      At line 210 in file main.s
+      At line 226 in file main.s
+
+Debug_Capture_End 00000068
+
+Symbol: Debug_Capture_End
+   Definitions
+      At line 133 in file main.s
+   Uses
+      At line 106 in file main.s
+      At line 114 in file main.s
+
+Debug_Init 0000006C
+
+Symbol: Debug_Init
+   Definitions
+      At line 139 in file main.s
+   Uses
+      At line 85 in file main.s
+Comment: Debug_Init used once
+Debug_Init_loop 0000007A
+
+Symbol: Debug_Init_loop
+   Definitions
+      At line 149 in file main.s
+   Uses
+      At line 157 in file main.s
+Comment: Debug_Init_loop used once
+End_check_pin_E1 0000014C
+
+Symbol: End_check_pin_E1
+   Definitions
+      At line 261 in file main.s
+   Uses
+      At line 239 in file main.s
+      At line 250 in file main.s
+
+Start 00000000
+
+Symbol: Start
+   Definitions
+      At line 84 in file main.s
+   Uses
+      At line 81 in file main.s
+
+
+
+ARM Macro Assembler    Page 2 Alphabetic symbol ordering
+Relocatable symbols
+
+Comment: Start used once
+blink_8Hz 000000DA
+
+Symbol: blink_8Hz
+   Definitions
+      At line 200 in file main.s
+   Uses
+      At line 94 in file main.s
+Comment: blink_8Hz used once
+breath_down 000000CE
+
+Symbol: breath_down
+   Definitions
+      At line 189 in file main.s
+   Uses
+      At line 182 in file main.s
+Comment: breath_down used once
+breath_up 000000D6
+
+Symbol: breath_up
+   Definitions
+      At line 193 in file main.s
+   Uses
+      At line 184 in file main.s
+Comment: breath_up used once
+check_btn 0000009C
+
+Symbol: check_btn
+   Definitions
+      At line 167 in file main.s
+   Uses
+      At line 188 in file main.s
+      At line 192 in file main.s
+      At line 195 in file main.s
+
+check_pin_E1 0000013E
+
+Symbol: check_pin_E1
+   Definitions
+      At line 254 in file main.s
+   Uses
+      At line 93 in file main.s
+Comment: check_pin_E1 used once
+check_pin_F4 00000094
+
+Symbol: check_pin_F4
+   Definitions
+      At line 163 in file main.s
+   Uses
+      None
+Comment: check_pin_F4 unused
+init 00000198
+
+Symbol: init
+   Definitions
+      At line 322 in file main.s
+   Uses
+      At line 88 in file main.s
+Comment: init used once
+
+
+
+ARM Macro Assembler    Page 3 Alphabetic symbol ordering
+Relocatable symbols
+
+init_variables 0000017E
+
+Symbol: init_variables
+   Definitions
+      At line 307 in file main.s
+   Uses
+      At line 89 in file main.s
+Comment: init_variables used once
+led_off 0000015A
+
+Symbol: led_off
+   Definitions
+      At line 277 in file main.s
+   Uses
+      At line 212 in file main.s
+Comment: led_off used once
+led_on 0000014E
+
+Symbol: led_on
+   Definitions
+      At line 267 in file main.s
+   Uses
+      At line 205 in file main.s
+Comment: led_on used once
+loop 00000014
+
+Symbol: loop
+   Definitions
+      At line 91 in file main.s
+   Uses
+      At line 96 in file main.s
+Comment: loop used once
+reset_duty 0000012C
+
+Symbol: reset_duty
+   Definitions
+      At line 243 in file main.s
+   Uses
+      At line 232 in file main.s
+Comment: reset_duty used once
+start_breath 000000A6
+
+Symbol: start_breath
+   Definitions
+      At line 174 in file main.s
+   Uses
+      At line 171 in file main.s
+Comment: start_breath used once
+switch_duty 000000FE
+
+Symbol: switch_duty
+   Definitions
+      At line 222 in file main.s
+   Uses
+      At line 260 in file main.s
+Comment: switch_duty used once
+toggle_blue_led 00000172
+
+Symbol: toggle_blue_led
+
+
+
+ARM Macro Assembler    Page 4 Alphabetic symbol ordering
+Relocatable symbols
+
+   Definitions
+      At line 297 in file main.s
+   Uses
+      At line 95 in file main.s
+Comment: toggle_blue_led used once
+toggle_led 00000166
+
+Symbol: toggle_led
+   Definitions
+      At line 287 in file main.s
+   Uses
+      At line 177 in file main.s
+      At line 180 in file main.s
+
+23 symbols
+
+
+
+ARM Macro Assembler    Page 1 Alphabetic symbol ordering
+Absolute symbols
+
+GPIO_PORTE_AFSEL_R 40024420
+
+Symbol: GPIO_PORTE_AFSEL_R
+   Definitions
+      At line 41 in file main.s
+   Uses
+      None
+Comment: GPIO_PORTE_AFSEL_R unused
+GPIO_PORTE_DATA_R 400243FC
+
+Symbol: GPIO_PORTE_DATA_R
+   Definitions
+      At line 39 in file main.s
+   Uses
+      At line 118 in file main.s
+      At line 256 in file main.s
+      At line 268 in file main.s
+      At line 278 in file main.s
+      At line 288 in file main.s
+
+GPIO_PORTE_DEN_R 4002451C
+
+Symbol: GPIO_PORTE_DEN_R
+   Definitions
+      At line 42 in file main.s
+   Uses
+      At line 369 in file main.s
+Comment: GPIO_PORTE_DEN_R used once
+GPIO_PORTE_DIR_R 40024400
+
+Symbol: GPIO_PORTE_DIR_R
+   Definitions
+      At line 40 in file main.s
+   Uses
+      At line 362 in file main.s
+Comment: GPIO_PORTE_DIR_R used once
+GPIO_PORTF_AFSEL_R 40025420
+
+Symbol: GPIO_PORTF_AFSEL_R
+   Definitions
+      At line 46 in file main.s
+   Uses
+      None
+Comment: GPIO_PORTF_AFSEL_R unused
+GPIO_PORTF_DATA_R 400253FC
+
+Symbol: GPIO_PORTF_DATA_R
+   Definitions
+      At line 44 in file main.s
+   Uses
+      At line 298 in file main.s
+Comment: GPIO_PORTF_DATA_R used once
+GPIO_PORTF_DEN_R 4002551C
+
+Symbol: GPIO_PORTF_DEN_R
+   Definitions
+      At line 48 in file main.s
+   Uses
+      At line 344 in file main.s
+
+
+
+ARM Macro Assembler    Page 2 Alphabetic symbol ordering
+Absolute symbols
+
+      At line 356 in file main.s
+
+GPIO_PORTF_DIR_R 40025400
+
+Symbol: GPIO_PORTF_DIR_R
+   Definitions
+      At line 45 in file main.s
+   Uses
+      At line 332 in file main.s
+      At line 350 in file main.s
+
+GPIO_PORTF_PUR_R 40025510
+
+Symbol: GPIO_PORTF_PUR_R
+   Definitions
+      At line 47 in file main.s
+   Uses
+      At line 338 in file main.s
+Comment: GPIO_PORTF_PUR_R used once
+NEntries 20000032
+
+Symbol: NEntries
+   Definitions
+      At line 57 in file main.s
+   Uses
+      At line 110 in file main.s
+      At line 147 in file main.s
+
+NVIC_ST_CURRENT_R E000E018
+
+Symbol: NVIC_ST_CURRENT_R
+   Definitions
+      At line 59 in file main.s
+   Uses
+      At line 126 in file main.s
+Comment: NVIC_ST_CURRENT_R used once
+PE0 40024004
+
+Symbol: PE0
+   Definitions
+      At line 53 in file main.s
+   Uses
+      None
+Comment: PE0 unused
+PE1 40024008
+
+Symbol: PE1
+   Definitions
+      At line 54 in file main.s
+   Uses
+      None
+Comment: PE1 unused
+PF4 40025040
+
+Symbol: PF4
+   Definitions
+      At line 55 in file main.s
+   Uses
+      At line 168 in file main.s
+
+
+
+ARM Macro Assembler    Page 3 Alphabetic symbol ordering
+Absolute symbols
+
+Comment: PF4 used once
+SYSCTL_RCGCGPIO_R 400FE608
+
+Symbol: SYSCTL_RCGCGPIO_R
+   Definitions
+      At line 50 in file main.s
+   Uses
+      At line 324 in file main.s
+Comment: SYSCTL_RCGCGPIO_R used once
+15 symbols
+
+
+
+ARM Macro Assembler    Page 1 Alphabetic symbol ordering
+External symbols
+
+Delay_10us 00000000
+
+Symbol: Delay_10us
+   Definitions
+      At line 64 in file main.s
+   Uses
+      At line 176 in file main.s
+      At line 179 in file main.s
+      At line 228 in file main.s
+
+Delay_1250ns 00000000
+
+Symbol: Delay_1250ns
+   Definitions
+      At line 66 in file main.s
+   Uses
+      At line 208 in file main.s
+      At line 215 in file main.s
+
+PLL_Init 00000000
+
+Symbol: PLL_Init
+   Definitions
+      At line 63 in file main.s
+   Uses
+      At line 86 in file main.s
+Comment: PLL_Init used once
+SysTick_Init 00000000
+
+Symbol: SysTick_Init
+   Definitions
+      At line 65 in file main.s
+   Uses
+      At line 87 in file main.s
+Comment: SysTick_Init used once
+4 symbols
+384 symbols in table

@@ -1,0 +1,330 @@
+
+
+
+ARM Macro Assembler    Page 1 
+
+
+    1 00000000         ;DEBUG.s
+    2 00000000         ;DEBUG_INIT: INITIALIZE SYSTICK, CREATE 2 ARRAY PORT_E_M
+                       EA, PORT_E_TIME
+    3 00000000         ;0XFF OR 0XFFFFFFFF INTO THE ARRAY TO SIGNIFY NO DATA SA
+                       VED.
+    4 00000000         ;DEBUG_CAPTURE: SAVE A DATA-POINT(PE1 INPUT, PE0 OUTPUT)
+                        IN DATABUFFER, AND NVIC_ST_CURRENT_R TO TIMEBUFFER
+    5 00000000         
+    6 00000000         ;VARIABLES
+    7 00000000 E000E014 
+                       NVIC_ST_RELOAD_R
+                               EQU              0xE000E014
+    8 00000000 E000E018 
+                       NVIC_ST_CURRENT_R
+                               EQU              0xE000E018
+    9 00000000 400243FC 
+                       GPIO_PORTE_DATA_R
+                               EQU              0x400243FC
+   10 00000000         ;ARRAYS
+   11 00000000                 AREA             DATA, ALIGN=2
+   12 00000000 00      PORTE_DATA
+                               SPACE            1
+   13 00000001 00 00 00 
+              00       CURRENT_TIME
+                               SPACE            4
+   14 00000005 00 00 00 
+              00 00 00 
+              00 00 00 
+              00 00 00 
+              00 00 00 
+              00 00 00 
+              00 00 00 
+              00 00 00 
+              00 00 00 
+              00 00 00 
+              00 00 00 
+              00 00 00 
+              00 00 00 
+              00 00 00 
+              00 00 00 
+              00 00 00 
+              00 00    DATABUFFER
+                               SPACE            50
+   15 00000037 00 00 00 
+              00 00 00 
+              00 00 00 
+              00 00 00 
+              00 00 00 
+              00 00 00 
+              00 00 00 
+              00 00 00 
+              00 00 00 
+              00 00 00 
+              00 00 00 
+              00 00 00 
+              00 00 00 
+              00 00 00 
+              00 00 00 
+              00 00 00 
+
+
+
+ARM Macro Assembler    Page 2 
+
+
+              00 00 00 
+              00 00 00 
+              00 00 00 
+              00 00 00 
+              00 00 00 
+              00 00 00 
+              00 00 00 
+              00 00 00 
+              00 00 00 
+              00 00 00 
+              00 00 00 
+              00 00 00 
+              00 00 00 
+              00 00 00 
+              00 00 00 
+              00 00 00 
+              00 00 00 
+              00 00 00 
+              00 00 00 
+              00 00 00 
+              00 00 00 
+              00 00 00 
+              00 00 00 
+              00 00 00 
+              00 00 00 
+              00 00 00 
+              00 00 00 
+              00 00 00 
+              00 00 00 
+              00 00 00 
+              00 00 00 
+              00 00 00 
+              00 00 00 
+              00 00 00 
+              00 00 00 
+              00 00 00 
+              00 00 00 
+              00 00 00 
+              00 00 00 
+              00 00 00 
+              00 00 00 
+              00 00 00 
+              00 00 00 
+              00 00 00 
+              00 00 00 
+              00 00 00 
+              00 00 00 
+              00 00 00 
+              00 00 00 
+              00 00 00 
+              00 00    TIMEBUFFER
+                               SPACE            4*50
+   16 000000FF 00 00 00 
+              00       DATAPT  SPACE            4
+   17 00000103 00 00 00 
+              00       TIMEPT  SPACE            4
+   18 00000107 00      NENTRIES
+                               SPACE            1
+   19 00000108         ;VARIABLES
+
+
+
+ARM Macro Assembler    Page 3 
+
+
+   20 00000108         
+   21 00000108         
+   22 00000108                 IMPORT           SYSTICK_INIT ;change the name i
+                                                            f you use different
+                                                             name
+   23 00000108                 IMPORT           SYSTICK_CURRENT_TIME ;change th
+                                                            e name if you use d
+                                                            ifferent name
+   24 00000108                 AREA             |.text|, CODE, READONLY, ALIGN=
+2
+   25 00000000                 THUMB
+   26 00000000                 EXPORT           DEBUG_INIT  ;change the name if
+                                                             you use different 
+                                                            name
+   27 00000000                 EXPORT           DEBUG_CAPTURE ;change the name 
+                                                            if you use differen
+                                                            t name
+   28 00000000         
+   29 00000000         DEBUG_INIT
+   30 00000000         ;Write Your code here
+   31 00000000 4770            BX               LR          ;Go Back 
+   32 00000002         
+   33 00000002         DEBUG_CAPTURE
+   34 00000002         ;Write Your code here
+   35 00000002 4770            BX               LR          ;Go Back
+   36 00000004         
+   37 00000004                 ALIGN
+   38 00000004                 END
+Command Line: --debug --xref --cpu=Cortex-M4 --apcs=interwork --depend=.\debug.
+d -o.\debug.o -IC:\Keil\ARM\RV31\INC -IC:\Keil\ARM\CMSIS\Include -IC:\Keil\ARM\
+Inc\Luminary --predefine="__EVAL SETA 1" --list=.\debug.lst DEBUG.s
+
+
+
+ARM Macro Assembler    Page 1 Alphabetic symbol ordering
+Relocatable symbols
+
+CURRENT_TIME 00000001
+
+Symbol: CURRENT_TIME
+   Definitions
+      At line 13 in file DEBUG.s
+   Uses
+      None
+Comment: CURRENT_TIME unused
+DATA 00000000
+
+Symbol: DATA
+   Definitions
+      At line 11 in file DEBUG.s
+   Uses
+      None
+Comment: DATA unused
+DATABUFFER 00000005
+
+Symbol: DATABUFFER
+   Definitions
+      At line 14 in file DEBUG.s
+   Uses
+      None
+Comment: DATABUFFER unused
+DATAPT 000000FF
+
+Symbol: DATAPT
+   Definitions
+      At line 16 in file DEBUG.s
+   Uses
+      None
+Comment: DATAPT unused
+NENTRIES 00000107
+
+Symbol: NENTRIES
+   Definitions
+      At line 18 in file DEBUG.s
+   Uses
+      None
+Comment: NENTRIES unused
+PORTE_DATA 00000000
+
+Symbol: PORTE_DATA
+   Definitions
+      At line 12 in file DEBUG.s
+   Uses
+      None
+Comment: PORTE_DATA unused
+TIMEBUFFER 00000037
+
+Symbol: TIMEBUFFER
+   Definitions
+      At line 15 in file DEBUG.s
+   Uses
+      None
+Comment: TIMEBUFFER unused
+TIMEPT 00000103
+
+Symbol: TIMEPT
+
+
+
+ARM Macro Assembler    Page 2 Alphabetic symbol ordering
+Relocatable symbols
+
+   Definitions
+      At line 17 in file DEBUG.s
+   Uses
+      None
+Comment: TIMEPT unused
+8 symbols
+
+
+
+ARM Macro Assembler    Page 1 Alphabetic symbol ordering
+Relocatable symbols
+
+.text 00000000
+
+Symbol: .text
+   Definitions
+      At line 24 in file DEBUG.s
+   Uses
+      None
+Comment: .text unused
+DEBUG_CAPTURE 00000002
+
+Symbol: DEBUG_CAPTURE
+   Definitions
+      At line 33 in file DEBUG.s
+   Uses
+      At line 27 in file DEBUG.s
+Comment: DEBUG_CAPTURE used once
+DEBUG_INIT 00000000
+
+Symbol: DEBUG_INIT
+   Definitions
+      At line 29 in file DEBUG.s
+   Uses
+      At line 26 in file DEBUG.s
+Comment: DEBUG_INIT used once
+3 symbols
+
+
+
+ARM Macro Assembler    Page 1 Alphabetic symbol ordering
+Absolute symbols
+
+GPIO_PORTE_DATA_R 400243FC
+
+Symbol: GPIO_PORTE_DATA_R
+   Definitions
+      At line 9 in file DEBUG.s
+   Uses
+      None
+Comment: GPIO_PORTE_DATA_R unused
+NVIC_ST_CURRENT_R E000E018
+
+Symbol: NVIC_ST_CURRENT_R
+   Definitions
+      At line 8 in file DEBUG.s
+   Uses
+      None
+Comment: NVIC_ST_CURRENT_R unused
+NVIC_ST_RELOAD_R E000E014
+
+Symbol: NVIC_ST_RELOAD_R
+   Definitions
+      At line 7 in file DEBUG.s
+   Uses
+      None
+Comment: NVIC_ST_RELOAD_R unused
+3 symbols
+
+
+
+ARM Macro Assembler    Page 1 Alphabetic symbol ordering
+External symbols
+
+SYSTICK_CURRENT_TIME 00000000
+
+Symbol: SYSTICK_CURRENT_TIME
+   Definitions
+      At line 23 in file DEBUG.s
+   Uses
+      None
+Comment: SYSTICK_CURRENT_TIME unused
+SYSTICK_INIT 00000000
+
+Symbol: SYSTICK_INIT
+   Definitions
+      At line 22 in file DEBUG.s
+   Uses
+      None
+Comment: SYSTICK_INIT unused
+2 symbols
+347 symbols in table

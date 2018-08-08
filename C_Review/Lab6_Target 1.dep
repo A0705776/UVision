@@ -1,0 +1,33 @@
+Dependencies for Project 'Lab6', Target 'Target 1': (DO NOT MODIFY !)
+F (.\Lab6.c)(0x59BC1DA4)(-c --cpu Cortex-M4 -D__EVAL -g -O0 --apcs=interwork --split_sections --signed_chars -I.. -I..\..\.. -IC:\Keil\EE319Kware\driverlib -IC:\Keil\EE319Kware\inc-I C:\Keil\ARM\RV31\INC-I C:\Keil\ARM\CMSIS\Include-I C:\Keil\ARM\Inc\TI\TM4C123-Drvmdk -DPART_LM4F120H5QR -DTM4C123GH6PM-o .\lab6.o --omf_browse .\lab6.crf --depend .\lab6.d)
+I (C:\Keil\ARM\ARMCC\include\stdint.h)(0x51C87C24)
+I (tm4c123gh6pm.h)(0x59409918)
+I (Sound.h)(0x59409918)
+I (Piano.h)(0x59409918)
+I (SysTick.h)(0x595A0F64)
+I (MCU_Clock.h)(0x595A0E45)
+I (dac.h)(0x59409916)
+F (.\MCU_Clock.c)(0x595A0E3D)(-c --cpu Cortex-M4 -D__EVAL -g -O0 --apcs=interwork --split_sections --signed_chars -I.. -I..\..\.. -IC:\Keil\EE319Kware\driverlib -IC:\Keil\EE319Kware\inc-I C:\Keil\ARM\RV31\INC-I C:\Keil\ARM\CMSIS\Include-I C:\Keil\ARM\Inc\TI\TM4C123-Drvmdk -DPART_LM4F120H5QR -DTM4C123GH6PM-o .\mcu_clock.o --omf_browse .\mcu_clock.crf --depend .\mcu_clock.d)
+I (tm4c123gh6pm.h)(0x59409918)
+I (C:\Keil\ARM\ARMCC\include\stdint.h)(0x51C87C24)
+I (MCU_Clock.h)(0x595A0E45)
+F (.\MCU_Clock.h)(0x595A0E45)()
+F (.\piano.c)(0x5965641D)(-c --cpu Cortex-M4 -D__EVAL -g -O0 --apcs=interwork --split_sections --signed_chars -I.. -I..\..\.. -IC:\Keil\EE319Kware\driverlib -IC:\Keil\EE319Kware\inc-I C:\Keil\ARM\RV31\INC-I C:\Keil\ARM\CMSIS\Include-I C:\Keil\ARM\Inc\TI\TM4C123-Drvmdk -DPART_LM4F120H5QR -DTM4C123GH6PM-o .\piano.o --omf_browse .\piano.crf --depend .\piano.d)
+I (C:\Keil\ARM\ARMCC\include\stdint.h)(0x51C87C24)
+I (tm4c123gh6pm.h)(0x59409918)
+F (.\Piano.h)(0x59409918)()
+F (.\Sound.c)(0x59657736)(-c --cpu Cortex-M4 -D__EVAL -g -O0 --apcs=interwork --split_sections --signed_chars -I.. -I..\..\.. -IC:\Keil\EE319Kware\driverlib -IC:\Keil\EE319Kware\inc-I C:\Keil\ARM\RV31\INC-I C:\Keil\ARM\CMSIS\Include-I C:\Keil\ARM\Inc\TI\TM4C123-Drvmdk -DPART_LM4F120H5QR -DTM4C123GH6PM-o .\sound.o --omf_browse .\sound.crf --depend .\sound.d)
+I (C:\Keil\ARM\ARMCC\include\stdint.h)(0x51C87C24)
+I (dac.h)(0x59409916)
+I (tm4c123gh6pm.h)(0x59409918)
+I (SysTick.h)(0x595A0F64)
+F (.\Sound.h)(0x59409918)()
+F (.\startup.s)(0x59409910)(--cpu Cortex-M4 --pd "__EVAL SETA 1" -g --apcs=interwork -I C:\Keil\ARM\RV31\INC-I C:\Keil\ARM\CMSIS\Include-I C:\Keil\ARM\Inc\TI\TM4C123--list .\startup.lst --xref -o .\startup.o --depend .\startup.d)
+F (.\SysTick.c)(0x595A0F64)(-c --cpu Cortex-M4 -D__EVAL -g -O0 --apcs=interwork --split_sections --signed_chars -I.. -I..\..\.. -IC:\Keil\EE319Kware\driverlib -IC:\Keil\EE319Kware\inc-I C:\Keil\ARM\RV31\INC-I C:\Keil\ARM\CMSIS\Include-I C:\Keil\ARM\Inc\TI\TM4C123-Drvmdk -DPART_LM4F120H5QR -DTM4C123GH6PM-o .\systick.o --omf_browse .\systick.crf --depend .\systick.d)
+I (C:\Keil\ARM\ARMCC\include\stdint.h)(0x51C87C24)
+F (.\SysTick.h)(0x595A0F64)()
+F (.\tm4c123gh6pm.h)(0x59409918)()
+F (.\dac.c)(0x5965641E)(-c --cpu Cortex-M4 -D__EVAL -g -O0 --apcs=interwork --split_sections --signed_chars -I.. -I..\..\.. -IC:\Keil\EE319Kware\driverlib -IC:\Keil\EE319Kware\inc-I C:\Keil\ARM\RV31\INC-I C:\Keil\ARM\CMSIS\Include-I C:\Keil\ARM\Inc\TI\TM4C123-Drvmdk -DPART_LM4F120H5QR -DTM4C123GH6PM-o .\dac.o --omf_browse .\dac.crf --depend .\dac.d)
+I (C:\Keil\ARM\ARMCC\include\stdint.h)(0x51C87C24)
+I (tm4c123gh6pm.h)(0x59409918)
+F (.\dac.h)(0x59409916)()
